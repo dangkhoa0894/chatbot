@@ -3,6 +3,30 @@ import re
 from models.state import ChatState
 from services.llm_client import chat
 
+# ── Fast-path keyword rules (no LLM call needed) ───────────────────────────────
+_GREETING_TRIGGERS = {'xin chào', 'chào', 'hi', 'hello', 'hey', 'alo', 'xin chao', 'chao', 'helo'}
+_ADDRESS_RE = re.compile(
+    r'\b\d+[\s,/\\]*.{0,30}(đường|phố|phường|quận|huyện|tỉnh|thành phố|tp\.?)\b',
+    re.IGNORECASE,
+)
+
+
+def _fast_intent(text: str) -> dict | None:
+    """Return a pre-classified result for obvious cases, else None to fall through to LLM."""
+    t = text.lower().strip()
+    words = set(re.split(r'\W+', t))
+    # Pure greeting with no product keywords
+    if words & _GREETING_TRIGGERS and len(text) < 40 and not any(
+        k in t for k in ('laptop', 'điện thoại', 'phone', 'tablet', 'máy', 'giá', 'mua')
+    ):
+        return {'intent': 'greeting', 'category': None, 'requirements': {},
+                'order_info': {}, 'is_ready_to_order': False, 'reasoning': 'fast-path'}
+    # Message contains a clear street address → order confirmation
+    if _ADDRESS_RE.search(text):
+        return {'intent': 'order_confirm', 'category': None, 'requirements': {},
+                'order_info': {}, 'is_ready_to_order': True, 'reasoning': 'fast-path address'}
+    return None
+
 _SYSTEM = """Bạn là AI phân tích ý định khách hàng cho cửa hàng điện tử bán laptop, điện thoại, máy tính bảng.
 
 Phân tích TIN NHẮN CUỐI của khách dựa trên lịch sử hội thoại. Chỉ trả về JSON, không có text khác:
@@ -50,12 +74,29 @@ def intent_node(state: ChatState) -> dict:
             "stage": "intent",
         }
 
+    last_user = next(
+        (m["content"] for m in reversed(messages) if m["role"] == "user"), ""
+    )
+
+    # Try fast-path first to avoid an unnecessary LLM call
+    fast = _fast_intent(last_user)
+    if fast:
+        existing_order = state.get("order_info", {})
+        new_order = fast.get("order_info") or {}
+        merged_order = {**existing_order, **{k: v for k, v in new_order.items() if v}}
+        return {
+            **state,
+            "intent": fast["intent"],
+            "category": fast.get("category") or state.get("category"),
+            "user_requirements": fast.get("requirements", {}),
+            "order_info": merged_order,
+            "is_ready_to_order": fast.get("is_ready_to_order", False),
+            "stage": "intent",
+        }
+
     context = "\n".join(
         f"{'Khách' if m['role'] == 'user' else 'Bot'}: {m['content']}"
         for m in messages[-6:]
-    )
-    last_user = next(
-        (m["content"] for m in reversed(messages) if m["role"] == "user"), ""
     )
 
     try:
@@ -70,7 +111,7 @@ def intent_node(state: ChatState) -> dict:
                     ),
                 },
             ],
-            max_tokens=700,
+            max_tokens=400,
             agent="intent",
             session_id=state.get("session_id", ""),
         )

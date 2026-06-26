@@ -62,11 +62,13 @@
 
       case 'message':
         hideTyping();
+        setSendEnabled(true);
         appendBotMessage(data.content, data.metadata);
         break;
 
       case 'error':
         hideTyping();
+        setSendEnabled(true);
         appendBotMessage(`⚠️ ${data.content}`);
         break;
     }
@@ -75,9 +77,10 @@
   // ── Send ───────────────────────────────────────────────────────────────────
   function send(text) {
     text = (text || inputEl.value).trim();
-    if (!text || !ws || ws.readyState !== WebSocket.OPEN) return;
+    if (!text || !ws || ws.readyState !== WebSocket.OPEN || sendBtn.disabled) return;
     inputEl.value = '';
     appendUserMessage(text);
+    setSendEnabled(false);
     ws.send(JSON.stringify({ message: text }));
   }
 
@@ -203,6 +206,8 @@
   function setSendEnabled(enabled) {
     sendBtn.disabled = !enabled;
     inputEl.disabled = !enabled;
+    sendBtn.innerHTML = enabled ? '➤' : '<span class="btn-spinner"></span>';
+    document.querySelectorAll('.quick-btn').forEach(b => b.disabled = !enabled);
   }
 
   function setBanner(type, text) {

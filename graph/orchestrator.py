@@ -1,3 +1,4 @@
+import asyncio
 from langgraph.graph import StateGraph, END
 from models.state import ChatState
 from agents.intent_agent import intent_node
@@ -77,8 +78,9 @@ async def process_message(session_id: str, user_message: str) -> str:
     messages.append({"role": "user", "content": user_message})
     state["messages"] = messages
 
-    # Run the multi-agent graph
-    result: ChatState = _graph.invoke(state)
+    # Run sync graph in thread pool to avoid blocking the async event loop
+    loop = asyncio.get_event_loop()
+    result: ChatState = await loop.run_in_executor(None, _graph.invoke, state)
 
     response = result.get("response") or "Xin lỗi, tôi không hiểu. Bạn có thể nói lại không?"
 
