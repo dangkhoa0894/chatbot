@@ -2,9 +2,15 @@ import json
 import re
 from models.state import ChatState
 from config import settings
-import anthropic
+from openai import OpenAI
 
-_client = anthropic.Anthropic(api_key=settings.ANTHROPIC_API_KEY)
+_client: OpenAI | None = None
+
+def _get_client() -> OpenAI:
+    global _client
+    if _client is None:
+        _client = OpenAI(api_key=settings.DEEPINFRA_API_KEY, base_url=settings.DEEPINFRA_BASE_URL)
+    return _client
 
 _SYSTEM = """Bạn là AI phân tích ý định khách hàng cho cửa hàng điện tử bán laptop, điện thoại, máy tính bảng.
 
@@ -64,19 +70,21 @@ def intent_node(state: ChatState) -> dict:
     )
 
     try:
-        resp = _client.messages.create(
+        resp = _get_client().chat.completions.create(
             model=settings.MODEL,
             max_tokens=700,
-            system=_SYSTEM,
-            messages=[{
-                "role": "user",
-                "content": (
-                    f"Lịch sử hội thoại:\n{context}\n\n"
-                    f"Phân tích tin nhắn cuối: \"{last_user}\""
-                ),
-            }],
+            messages=[
+                {"role": "system", "content": _SYSTEM},
+                {
+                    "role": "user",
+                    "content": (
+                        f"Lịch sử hội thoại:\n{context}\n\n"
+                        f"Phân tích tin nhắn cuối: \"{last_user}\""
+                    ),
+                },
+            ],
         )
-        raw = resp.content[0].text.strip()
+        raw = resp.choices[0].message.content.strip()
         m = re.search(r"\{.*\}", raw, re.DOTALL)
         result = json.loads(m.group() if m else raw)
     except Exception as exc:

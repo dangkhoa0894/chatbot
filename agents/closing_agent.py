@@ -2,9 +2,15 @@ import uuid
 from models.state import ChatState
 from services.product_service import format_price, format_products_for_llm, get_product_by_id
 from config import settings
-import anthropic
+from openai import OpenAI
 
-_client = anthropic.Anthropic(api_key=settings.ANTHROPIC_API_KEY)
+_client: OpenAI | None = None
+
+def _get_client() -> OpenAI:
+    global _client
+    if _client is None:
+        _client = OpenAI(api_key=settings.DEEPINFRA_API_KEY, base_url=settings.DEEPINFRA_BASE_URL)
+    return _client
 
 _SYSTEM = """Bạn là chuyên gia tư vấn & chốt sale sản phẩm điện tử, nhiệt tình và thân thiện.
 
@@ -113,19 +119,21 @@ def closing_node(state: ChatState) -> dict:
         situation_parts.append(f"[Mã đơn hàng mới]: #ORD-{order_id}")
 
     try:
-        resp = _client.messages.create(
+        resp = _get_client().chat.completions.create(
             model=settings.MODEL,
             max_tokens=1000,
-            system=_SYSTEM,
-            messages=[{
-                "role": "user",
-                "content": (
-                    f"Lịch sử hội thoại:\n{context}\n\n"
-                    f"Thông tin tình huống:\n" + "\n\n".join(situation_parts)
-                ),
-            }],
+            messages=[
+                {"role": "system", "content": _SYSTEM},
+                {
+                    "role": "user",
+                    "content": (
+                        f"Lịch sử hội thoại:\n{context}\n\n"
+                        f"Thông tin tình huống:\n" + "\n\n".join(situation_parts)
+                    ),
+                },
+            ],
         )
-        response = resp.content[0].text
+        response = resp.choices[0].message.content
     except Exception as exc:
         response = f"Xin lỗi, có lỗi xảy ra. Vui lòng thử lại. ({exc})"
 
@@ -171,13 +179,15 @@ Thông tin cần thiết:
 - Thanh toán: COD, chuyển khoản, trả góp 0%"""
 
     try:
-        resp = _client.messages.create(
+        resp = _get_client().chat.completions.create(
             model=settings.MODEL,
             max_tokens=600,
-            system=system,
-            messages=[{"role": "user", "content": context}],
+            messages=[
+                {"role": "system", "content": system},
+                {"role": "user", "content": context},
+            ],
         )
-        response = resp.content[0].text
+        response = resp.choices[0].message.content
     except Exception as exc:
         response = f"Xin chào! Tôi là TechShop AI. Tôi có thể giúp bạn tìm laptop, điện thoại, máy tính bảng phù hợp. Bạn đang tìm kiếm sản phẩm gì? 😊"
 

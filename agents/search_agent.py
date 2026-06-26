@@ -1,9 +1,15 @@
 from models.state import ChatState
 from services.product_service import search_products, format_products_for_llm
 from config import settings
-import anthropic
+from openai import OpenAI
 
-_client = anthropic.Anthropic(api_key=settings.ANTHROPIC_API_KEY)
+_client: OpenAI | None = None
+
+def _get_client() -> OpenAI:
+    global _client
+    if _client is None:
+        _client = OpenAI(api_key=settings.DEEPINFRA_API_KEY, base_url=settings.DEEPINFRA_BASE_URL)
+    return _client
 
 _SYSTEM = """Bạn là chuyên gia tư vấn sản phẩm điện tử (laptop, điện thoại, máy tính bảng).
 
@@ -61,21 +67,23 @@ def search_node(state: ChatState) -> dict:
     products_text = format_products_for_llm(products)
 
     try:
-        resp = _client.messages.create(
+        resp = _get_client().chat.completions.create(
             model=settings.MODEL,
             max_tokens=1200,
-            system=_SYSTEM,
-            messages=[{
-                "role": "user",
-                "content": (
-                    f"Lịch sử hội thoại gần đây:\n{context}\n\n"
-                    f"Yêu cầu của khách:\n{req_str}\n\n"
-                    f"Danh sách sản phẩm phù hợp:\n{products_text}\n\n"
-                    "Hãy tư vấn sản phẩm phù hợp nhất."
-                ),
-            }],
+            messages=[
+                {"role": "system", "content": _SYSTEM},
+                {
+                    "role": "user",
+                    "content": (
+                        f"Lịch sử hội thoại gần đây:\n{context}\n\n"
+                        f"Yêu cầu của khách:\n{req_str}\n\n"
+                        f"Danh sách sản phẩm phù hợp:\n{products_text}\n\n"
+                        "Hãy tư vấn sản phẩm phù hợp nhất."
+                    ),
+                },
+            ],
         )
-        response = resp.content[0].text
+        response = resp.choices[0].message.content
     except Exception as exc:
         response = f"Xin lỗi, có lỗi khi tìm kiếm sản phẩm: {exc}"
 
