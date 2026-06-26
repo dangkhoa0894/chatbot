@@ -13,6 +13,10 @@ class Settings:
     FB_APP_SECRET: str = os.getenv("FB_APP_SECRET", "")
     HOST: str = os.getenv("HOST", "0.0.0.0")
     PORT: int = int(os.getenv("PORT", "8000"))
+    ADMIN_TOKEN: str = os.getenv("ADMIN_TOKEN", "admin123")
+    ADMIN_USERNAME: str = os.getenv("ADMIN_USERNAME", "admin")
+    ADMIN_PASSWORD: str = os.getenv("ADMIN_PASSWORD", "Admin@2026")
+    DB_PATH: str = os.getenv("DB_PATH", "data/chatbot.db")
 
 
 settings = Settings()

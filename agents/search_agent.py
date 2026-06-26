@@ -1,15 +1,6 @@
 from models.state import ChatState
 from services.product_service import search_products, format_products_for_llm
-from config import settings
-from openai import OpenAI
-
-_client: OpenAI | None = None
-
-def _get_client() -> OpenAI:
-    global _client
-    if _client is None:
-        _client = OpenAI(api_key=settings.DEEPINFRA_API_KEY, base_url=settings.DEEPINFRA_BASE_URL)
-    return _client
+from services.llm_client import chat
 
 _SYSTEM = """Bạn là chuyên gia tư vấn sản phẩm điện tử (laptop, điện thoại, máy tính bảng).
 
@@ -20,7 +11,7 @@ Dựa trên yêu cầu của khách và danh sách sản phẩm có sẵn, hãy:
 4. Cuối cùng hỏi nhẹ nhàng để khách chọn hoặc cung cấp thêm thông tin
 
 Phong cách: Thân thiện, chuyên nghiệp, dùng emoji phù hợp, tiếng Việt tự nhiên.
-Định dạng: Dùng ký hiệu ✅ cho ưu điểm, ❌ cho nhược điểm nhỏ, 🏆 cho sản phẩm đề xuất."""
+Định dạng: Dùng ký hiệu ✅ cho ưu điểm, 🏆 cho sản phẩm đề xuất."""
 
 
 def search_node(state: ChatState) -> dict:
@@ -28,7 +19,6 @@ def search_node(state: ChatState) -> dict:
     req = state.get("user_requirements", {})
     category = state.get("category")
 
-    # Search with all available filters
     products = search_products(
         category=category,
         max_price=req.get("budget_max"),
@@ -37,14 +27,11 @@ def search_node(state: ChatState) -> dict:
         use_case=req.get("use_case"),
         keywords=req.get("keywords", []),
     )
-
-    # Broaden progressively if too few results
     if len(products) < 2 and category:
         products = search_products(category=category)
     if len(products) < 2:
         products = search_products()
-
-    products = products[:6]  # cap at 6 for LLM
+    products = products[:6]
 
     context = "\n".join(
         f"{'Khách' if m['role'] == 'user' else 'Bot'}: {m['content']}"
@@ -64,12 +51,8 @@ def search_node(state: ChatState) -> dict:
         req_lines.append(f"Từ khóa: {', '.join(req['keywords'])}")
     req_str = "\n".join(req_lines) or "Chưa có yêu cầu cụ thể"
 
-    products_text = format_products_for_llm(products)
-
     try:
-        resp = _get_client().chat.completions.create(
-            model=settings.MODEL,
-            max_tokens=1200,
+        response = chat(
             messages=[
                 {"role": "system", "content": _SYSTEM},
                 {
@@ -77,13 +60,15 @@ def search_node(state: ChatState) -> dict:
                     "content": (
                         f"Lịch sử hội thoại gần đây:\n{context}\n\n"
                         f"Yêu cầu của khách:\n{req_str}\n\n"
-                        f"Danh sách sản phẩm phù hợp:\n{products_text}\n\n"
+                        f"Danh sách sản phẩm phù hợp:\n{format_products_for_llm(products)}\n\n"
                         "Hãy tư vấn sản phẩm phù hợp nhất."
                     ),
                 },
             ],
+            max_tokens=1200,
+            agent="search",
+            session_id=state.get("session_id", ""),
         )
-        response = resp.choices[0].message.content
     except Exception as exc:
         response = f"Xin lỗi, có lỗi khi tìm kiếm sản phẩm: {exc}"
 
@@ -91,6 +76,5 @@ def search_node(state: ChatState) -> dict:
         **state,
         "recommended_products": products,
         "stage": "search",
-        # no response here — closing_node generates the user-facing reply
-        "_search_draft": response,  # internal: passed to closing_node
+        "_search_draft": response,
     }

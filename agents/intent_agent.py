@@ -1,16 +1,7 @@
 import json
 import re
 from models.state import ChatState
-from config import settings
-from openai import OpenAI
-
-_client: OpenAI | None = None
-
-def _get_client() -> OpenAI:
-    global _client
-    if _client is None:
-        _client = OpenAI(api_key=settings.DEEPINFRA_API_KEY, base_url=settings.DEEPINFRA_BASE_URL)
-    return _client
+from services.llm_client import chat
 
 _SYSTEM = """Bạn là AI phân tích ý định khách hàng cho cửa hàng điện tử bán laptop, điện thoại, máy tính bảng.
 
@@ -59,20 +50,16 @@ def intent_node(state: ChatState) -> dict:
             "stage": "intent",
         }
 
-    # Last 6 messages for context
     context = "\n".join(
         f"{'Khách' if m['role'] == 'user' else 'Bot'}: {m['content']}"
         for m in messages[-6:]
     )
     last_user = next(
-        (m["content"] for m in reversed(messages) if m["role"] == "user"),
-        "",
+        (m["content"] for m in reversed(messages) if m["role"] == "user"), ""
     )
 
     try:
-        resp = _get_client().chat.completions.create(
-            model=settings.MODEL,
-            max_tokens=700,
+        raw = chat(
             messages=[
                 {"role": "system", "content": _SYSTEM},
                 {
@@ -83,8 +70,10 @@ def intent_node(state: ChatState) -> dict:
                     ),
                 },
             ],
+            max_tokens=700,
+            agent="intent",
+            session_id=state.get("session_id", ""),
         )
-        raw = resp.choices[0].message.content.strip()
         m = re.search(r"\{.*\}", raw, re.DOTALL)
         result = json.loads(m.group() if m else raw)
     except Exception as exc:
@@ -97,7 +86,6 @@ def intent_node(state: ChatState) -> dict:
             "reasoning": f"parse error: {exc}",
         }
 
-    # Merge order_info: keep previously collected fields, override with new non-null values
     existing_order = state.get("order_info", {})
     new_order = result.get("order_info", {}) or {}
     merged_order = {**existing_order, **{k: v for k, v in new_order.items() if v}}

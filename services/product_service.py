@@ -1,5 +1,6 @@
 from typing import Optional, List
 
+# ── Seed data (used to bootstrap the DB on first run) ─────────────────────────
 PRODUCTS_DB: List[dict] = [
     # ──────────────────── LAPTOPS ────────────────────
     {
@@ -384,6 +385,25 @@ PRODUCTS_DB: List[dict] = [
 ]
 
 
+# ── Live product list (updated from DB at runtime) ─────────────────────────────
+_live_products: List[dict] = list(PRODUCTS_DB)
+
+
+def reload_products() -> None:
+    """Replace the live list with the current DB state. Called after admin CRUD."""
+    global _live_products
+    try:
+        from db.database import load_all_products
+        db_products = load_all_products()
+        _live_products = db_products if db_products else list(PRODUCTS_DB)
+    except Exception:
+        _live_products = list(PRODUCTS_DB)
+
+
+def get_live_products() -> List[dict]:
+    return _live_products
+
+
 def search_products(
     category: Optional[str] = None,
     max_price: Optional[int] = None,
@@ -392,7 +412,7 @@ def search_products(
     use_case: Optional[str] = None,
     keywords: Optional[list] = None,
 ) -> List[dict]:
-    results = list(PRODUCTS_DB)
+    results = list(_live_products)
 
     if category:
         cat = category.lower()
@@ -438,7 +458,7 @@ def search_products(
 
 
 def get_product_by_id(product_id: str) -> Optional[dict]:
-    for p in PRODUCTS_DB:
+    for p in _live_products:
         if p["id"] == product_id:
             return p
     return None
