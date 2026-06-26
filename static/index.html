@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TechShop AI — Tư vấn mua sắm điện tử</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<div class="chat-wrapper">
+
+  <!-- Header -->
+  <div class="chat-header">
+    <div class="header-left">
+      <div class="bot-avatar">🤖</div>
+      <div>
+        <div class="bot-name">TechShop AI</div>
+        <div class="bot-tagline"><span class="status-dot"></span> Tư vấn mua sắm thông minh</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <span class="session-label" id="session-label"></span>
+      <button class="clear-btn" onclick="clearSession()">🗑 Xoá chat</button>
+    </div>
+  </div>
+
+  <!-- Connection banner -->
+  <div class="conn-banner" id="conn-banner"></div>
+
+  <!-- Messages -->
+  <div class="chat-messages" id="chat-messages"></div>
+
+  <!-- Input area -->
+  <div class="chat-input-area">
+    <div class="quick-replies">
+      <button class="quick-btn" onclick="send('Xin chào!')">👋 Chào</button>
+      <button class="quick-btn" onclick="send('Tôi cần mua laptop để lập trình')">💻 Laptop lập trình</button>
+      <button class="quick-btn" onclick="send('Điện thoại chụp ảnh đẹp dưới 15 triệu')">📱 Phone chụp ảnh</button>
+      <button class="quick-btn" onclick="send('Máy tính bảng để vẽ và học tập')">📟 Máy tính bảng</button>
+      <button class="quick-btn" onclick="send('Laptop gaming mạnh tầm 30-35 triệu')">🎮 Laptop gaming</button>
+    </div>
+    <div class="input-row">
+      <input
+        type="text" id="msg-input"
+        placeholder="Nhập tin nhắn... (VD: Laptop lập trình dưới 40 triệu)"
+        autocomplete="off"
+      />
+      <button id="send-btn" title="Gửi">➤</button>
+    </div>
+  </div>
+
+</div>
+
+<script src="/static/app.js"></script>
+</body>
+</html>
