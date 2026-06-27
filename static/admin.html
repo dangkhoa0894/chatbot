@@ -170,6 +170,7 @@ canvas{display:block;width:100%;height:160px}
       <div class="nav-item" onclick="showTab('metrics')" id="nav-metrics">Metrics</div>
       <div class="nav-item" onclick="showTab('escalations')" id="nav-escalations">Escalations</div>
       <div class="nav-item" onclick="showTab('config')" id="nav-config">Cấu hình</div>
+      <button onclick="logout()" style="margin-left:auto;background:none;border:1px solid #e74c3c;color:#e74c3c;padding:4px 14px;border-radius:4px;cursor:pointer;font-size:12px;">Đăng xuất</button>
     </nav>
     <div class="aside-footer">
       <div class="model-badge" id="model-label">Loading…</div>
@@ -676,7 +677,10 @@ async function doLogin() {
   if (r.ok) {
     const data = await r.json();
     TOKEN = data.token;
-    localStorage.setItem('admin_token', TOKEN);
+    sessionStorage.setItem('admin_token', TOKEN);
+    if (data.expires_in) {
+      sessionStorage.setItem('admin_token_expires', new Date(Date.now() + data.expires_in * 1000).toISOString());
+    }
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('admin-app').style.display = 'flex';
     initApp();
@@ -688,7 +692,7 @@ async function doLogin() {
 }
 
 function doLogout() {
-  localStorage.removeItem('admin_token');
+  sessionStorage.removeItem('admin_token');
   TOKEN = '';
   document.getElementById('admin-app').style.display = 'none';
   document.getElementById('login-screen').style.display = 'flex';
@@ -696,11 +700,19 @@ function doLogout() {
   document.getElementById('login-password').value = '';
 }
 
+async function logout() {
+  try { await apiFetch('/admin/api/logout', {method:'POST'}); } catch(e) {}
+  sessionStorage.removeItem('admin_token');
+  sessionStorage.removeItem('admin_token_expires');
+  document.getElementById('login-section').style.display = '';
+  document.getElementById('main-section').style.display = 'none';
+}
+
 document.getElementById('login-password').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
 document.getElementById('login-username').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('login-password').focus(); });
 
 // Auto-login if token saved
-const saved = localStorage.getItem('admin_token');
+const saved = sessionStorage.getItem('admin_token');
 if (saved) {
   fetch('/admin/api/verify', { headers: { Authorization: `Bearer ${saved}` } }).then(r => {
     if (r.ok) { TOKEN = saved; document.getElementById('login-screen').style.display = 'none'; document.getElementById('admin-app').style.display = 'flex'; initApp(); }
@@ -717,6 +729,21 @@ function initApp() {
 }
 
 function auth() { return { Authorization: `Bearer ${TOKEN}` }; }
+
+async function apiFetch(url, options = {}) {
+  const res = await fetch(url, {
+    ...options,
+    headers: { ...auth(), ...(options.headers || {}) },
+  });
+  if (res.status === 401) {
+    sessionStorage.removeItem('admin_token');
+    document.getElementById('login-section').style.display = '';
+    document.getElementById('main-section').style.display = 'none';
+    alert('Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.');
+    return null;
+  }
+  return res;
+}
 
 // ── Tab navigation ────────────────────────────────────────────────────────────
 function showTab(name) {

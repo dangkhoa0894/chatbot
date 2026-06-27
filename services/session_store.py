@@ -1,9 +1,35 @@
 """Redis-backed session store with transparent fallback to in-memory dict."""
 import json
 from typing import Optional
+from collections import OrderedDict
 from config import settings
 
-_fallback: dict = {}
+
+class _LRUDict:
+    def __init__(self, maxsize: int):
+        self._d: OrderedDict = OrderedDict()
+        self._max = maxsize
+    def get(self, key: str):
+        if key not in self._d:
+            return None
+        self._d.move_to_end(key)
+        return self._d[key]
+    def set(self, key: str, value):
+        if key in self._d:
+            self._d.move_to_end(key)
+        self._d[key] = value
+        if len(self._d) > self._max:
+            self._d.popitem(last=False)
+    def pop(self, key: str, default=None):
+        return self._d.pop(key, default)
+    def __len__(self):
+        return len(self._d)
+    def __contains__(self, key: str):
+        return key in self._d
+
+
+_MAX_FALLBACK = 5000
+_fallback = _LRUDict(_MAX_FALLBACK)
 _redis = None
 
 
@@ -50,7 +76,7 @@ async def save_session(session_id: str, state: dict, ttl: int = 3600):
             return
         except Exception:
             pass
-    _fallback[session_id] = clean
+    _fallback.set(session_id, clean)
 
 
 async def delete_session(session_id: str):

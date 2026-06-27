@@ -43,12 +43,24 @@ def emit_escalation_event(
         logger.warning("Failed to persist escalation: %s", exc)
 
 
-def _send_webhook(payload: dict) -> None:
+def _send_webhook(payload: dict, max_retries: int = 3) -> bool:
     url = getattr(settings, "ESCALATION_WEBHOOK_URL", "")
     if not url:
-        return
-    try:
-        with httpx.Client(timeout=5.0) as client:
-            client.post(url, json=payload)
-    except Exception as exc:
-        logger.warning("Escalation webhook error: %s", exc)
+        return False
+    import time
+    last_exc = None
+    for attempt in range(max_retries):
+        try:
+            with httpx.Client(timeout=5.0) as client:
+                r = client.post(url, json=payload)
+                r.raise_for_status()
+                logger.info("Escalation webhook delivered on attempt %d", attempt + 1)
+                return True
+        except Exception as exc:
+            last_exc = exc
+            if attempt < max_retries - 1:
+                sleep_s = 2 ** attempt
+                logger.warning("Escalation webhook attempt %d failed: %s, retrying in %ds", attempt + 1, exc, sleep_s)
+                time.sleep(sleep_s)
+    logger.error("Escalation webhook failed after %d attempts: %s — escalation persisted to DB only", max_retries, last_exc)
+    return False

@@ -27,6 +27,7 @@ class SessionMetrics:
     escalated: bool = False        # whether session was escalated to human
     escalation_reason: str = ""
     sentiments: list = field(default_factory=list)
+    last_seen: float = 0.0
 
 
 class MetricsStore:
@@ -101,6 +102,7 @@ class MetricsStore:
         return sum(1 for s in self._sessions.values() if not s.ended)
 
     def summary(self, hours: int = 24) -> dict:
+        self._evict_old_sessions()
         cutoff = time.time() - hours * 3600
         sessions = [s for s in self._sessions.values() if s.start_time >= cutoff]
         total = len(sessions)
@@ -180,10 +182,20 @@ class MetricsStore:
             "positive_sentiment_rate": round(pos_count / total_sent * 100, 1),
         }
 
+    def _evict_old_sessions(self, max_age_hours: int = 168) -> None:
+        import time
+        cutoff = time.monotonic() - max_age_hours * 3600
+        to_remove = [sid for sid, s in self._sessions.items() if s.last_seen < cutoff and s.last_seen > 0]
+        for sid in to_remove:
+            del self._sessions[sid]
+
     def _get_or_create(self, session_id: str) -> SessionMetrics:
         if session_id not in self._sessions:
             self._sessions[session_id] = SessionMetrics()
-        return self._sessions[session_id]
+        s = self._sessions[session_id]
+        import time
+        s.last_seen = time.monotonic()
+        return s
 
 
 def _percentile(data: list[float], p: int) -> float:

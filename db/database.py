@@ -73,7 +73,30 @@ def init_db() -> None:
                 turn_count INTEGER DEFAULT 0
             );
             CREATE INDEX IF NOT EXISTS idx_csat_ts ON csat_ratings(ts);
+
+            CREATE INDEX IF NOT EXISTS idx_token_logs_session_id ON token_logs(session_id);
+            CREATE INDEX IF NOT EXISTS idx_token_logs_model ON token_logs(model);
+            CREATE INDEX IF NOT EXISTS idx_escalations_session_id ON escalations(session_id);
+            CREATE INDEX IF NOT EXISTS idx_escalations_resolved ON escalations(resolved);
+            CREATE INDEX IF NOT EXISTS idx_csat_session_id ON csat_ratings(session_id);
         """)
+
+
+    cleanup_old_data()
+
+
+# ── Data retention ─────────────────────────────────────────────────────────────
+def cleanup_old_data(token_log_days: int = 90, csat_days: int = 180) -> dict:
+    with _conn() as c:
+        deleted_tokens = c.execute(
+            "DELETE FROM token_logs WHERE ts < datetime('now', ?)",
+            (f"-{token_log_days} days",)
+        ).rowcount
+        deleted_csat = c.execute(
+            "DELETE FROM csat_ratings WHERE ts < datetime('now', ?)",
+            (f"-{csat_days} days",)
+        ).rowcount
+    return {"deleted_token_logs": deleted_tokens, "deleted_csat_ratings": deleted_csat}
 
 
 # ── Token logging ──────────────────────────────────────────────────────────────

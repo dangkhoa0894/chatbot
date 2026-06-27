@@ -20,11 +20,24 @@ _HISTORY_LIMIT = 40
 
 
 class ConnectionManager:
+    MAX_CONNECTIONS = 500
+    MAX_PER_IP = 5
+    _ip_counts: dict = {}
+
     def __init__(self):
         self._active: dict[str, WebSocket] = {}
 
     async def connect(self, websocket: WebSocket, requested_id: str = "") -> tuple[str, bool]:
         """Accept connection. Reuse existing session if requested_id is valid."""
+        ip = websocket.client.host if websocket.client else "unknown"
+        if len(self._active) >= self.MAX_CONNECTIONS:
+            await websocket.close(code=1013)
+            return "", False
+        if self._ip_counts.get(ip, 0) >= self.MAX_PER_IP:
+            await websocket.close(code=1013)
+            return "", False
+        self._ip_counts[ip] = self._ip_counts.get(ip, 0) + 1
+
         await websocket.accept()
 
         resumed = False
@@ -41,8 +54,14 @@ class ConnectionManager:
         self._active[session_id] = websocket
         return session_id, resumed
 
-    async def disconnect(self, session_id: str):
+
+    async def disconnect(self, session_id: str, websocket: WebSocket = None):
         """Remove from active connections but keep session in store for future reconnects."""
+        if websocket is None:
+            websocket = self._active.get(session_id)
+        ip = getattr(getattr(websocket, 'client', None), 'host', 'unknown')
+        if ip in self._ip_counts:
+            self._ip_counts[ip] = max(0, self._ip_counts[ip] - 1)
         self._active.pop(session_id, None)
         metrics.session_end(session_id)
         # Session is NOT deleted here — client may reconnect and resume
@@ -60,6 +79,10 @@ async def websocket_endpoint(websocket: WebSocket):
     requested_id = websocket.query_params.get("session_id", "")
     session_id, resumed = await manager.connect(websocket, requested_id)
 
+    if not session_id:
+        # Connection was rejected (capacity or per-IP limit)
+        return
+
     if resumed:
         metrics.session_reconnect(session_id)
         state = await get_session_state(session_id)
@@ -75,6 +98,15 @@ async def websocket_endpoint(websocket: WebSocket):
         "history": history,
         "message": _WELCOME,
     })
+
+    async def _heartbeat():
+        try:
+            while True:
+                await asyncio.sleep(30)
+                await websocket.send_json({"type": "ping"})
+        except Exception:
+            pass
+    heartbeat_task = asyncio.create_task(_heartbeat())
 
     try:
         while True:
@@ -110,7 +142,7 @@ async def websocket_endpoint(websocket: WebSocket):
             # ── Typing indicator ─────────────────────────────────────────────
             await manager.send(session_id, {"type": "typing", "is_typing": True})
 
-            token_queue: asyncio.Queue = asyncio.Queue()
+            token_queue: asyncio.Queue = asyncio.Queue(maxsize=50)
             turn_t0 = time.perf_counter()
             ttft_ms: float | None = None
             first_token = True
@@ -185,7 +217,8 @@ async def websocket_endpoint(websocket: WebSocket):
                 await manager.send(session_id, {"type": "typing", "is_typing": False})
 
     except WebSocketDisconnect:
-        await manager.disconnect(session_id)
+        heartbeat_task.cancel()
+        await manager.disconnect(session_id, websocket)
 
 
 def _slim_products(products: list) -> list:

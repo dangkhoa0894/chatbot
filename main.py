@@ -17,6 +17,16 @@ from config import settings
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    from services.logger import setup_logging
+    setup_logging()
+    import logging
+    _log = logging.getLogger("startup")
+    from config import validate_config
+    try:
+        validate_config()
+    except RuntimeError as e:
+        _log.critical("STARTUP FAILED — %s", e)
+        raise
     init_db()
     seed_products_if_empty(PRODUCTS_DB)
     reload_products()
@@ -35,13 +45,23 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+_cors_origins = [o.strip() for o in settings.CORS_ORIGINS.split(",") if o.strip()] if settings.CORS_ORIGINS else ["*"]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=_cors_origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "X-Request-ID"],
 )
+
+try:
+    from prometheus_fastapi_instrumentator import Instrumentator
+    Instrumentator(
+        should_group_status_codes=True,
+        excluded_handlers=["/health", "/metrics"],
+    ).instrument(app).expose(app, endpoint="/metrics", include_in_schema=False)
+except ImportError:
+    pass
 
 # ── Static files ───────────────────────────────────────────────────────────────
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -112,13 +132,50 @@ async def submit_csat(body: CsatPayload):
 # ── Health ─────────────────────────────────────────────────────────────────────
 @app.get("/health", tags=["Health"])
 async def health():
-    from services.product_service import get_live_products
+    import logging as _logging
+    _hlog = _logging.getLogger("health")
+    result = {"ok": True, "checks": {}}
+
+    # DB check
+    try:
+        from db.database import _conn
+        with _conn() as c:
+            c.execute("SELECT 1").fetchone()
+        result["checks"]["db"] = "ok"
+    except Exception as e:
+        result["checks"]["db"] = f"error: {e}"
+        result["ok"] = False
+        _hlog.error("Health DB check failed: %s", e)
+
+    # Redis check
+    try:
+        from services import session_store
+        r = await session_store._get_redis()
+        if r:
+            await r.ping()
+            result["checks"]["redis"] = "ok"
+        else:
+            result["checks"]["redis"] = "not_configured"
+    except Exception as e:
+        result["checks"]["redis"] = f"error: {e}"
+
+    # Products check
+    from services.product_service import PRODUCTS_DB
+    result["checks"]["products"] = len(PRODUCTS_DB)
+
+    if not result["ok"]:
+        return JSONResponse(result, status_code=503)
+    return result
+
+
+import os as _os
+
+@app.get("/version", include_in_schema=False)
+async def version():
     return {
-        "status": "ok",
-        "model": settings.MODEL,
-        "products": len(get_live_products()),
-        "fb_configured": bool(settings.FB_PAGE_ACCESS_TOKEN),
-        "redis": bool(settings.REDIS_URL),
+        "version": app.version,
+        "git_commit": _os.getenv("GIT_COMMIT", "unknown"),
+        "build_date": _os.getenv("BUILD_DATE", "unknown"),
     }
 
 

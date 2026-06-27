@@ -1,5 +1,10 @@
 import uuid
-from fastapi import APIRouter, HTTPException, Header, Query
+import time as _time
+import hmac
+import hashlib
+import base64
+import json
+from fastapi import APIRouter, HTTPException, Header, Query, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from typing import Optional, Any, Dict
@@ -14,11 +19,65 @@ from services import runtime_config as _rc
 
 router = APIRouter(prefix="/admin/api")
 
+_TOKEN_TTL_HOURS = 8
+
+
+# ── Pure-Python HS256 JWT (stdlib only) ───────────────────────────────────────
+def _b64url_encode(data: bytes) -> str:
+    return base64.urlsafe_b64encode(data).rstrip(b"=").decode()
+
+
+def _b64url_decode(s: str) -> bytes:
+    pad = 4 - len(s) % 4
+    return base64.urlsafe_b64decode(s + "=" * (pad % 4))
+
+
+def _jwt_encode(payload: dict, secret: str) -> str:
+    header = _b64url_encode(json.dumps({"alg": "HS256", "typ": "JWT"}, separators=(",", ":")).encode())
+    body = _b64url_encode(json.dumps(payload, separators=(",", ":")).encode())
+    signing_input = f"{header}.{body}".encode()
+    sig = hmac.new(secret.encode(), signing_input, digestmod=hashlib.sha256).digest()
+    return f"{header}.{body}.{_b64url_encode(sig)}"
+
+
+def _jwt_decode(token: str, secret: str) -> dict:
+    try:
+        parts = token.split(".")
+        if len(parts) != 3:
+            raise ValueError("Invalid token structure")
+        header_b, body_b, sig_b = parts
+        signing_input = f"{header_b}.{body_b}".encode()
+        expected_sig = hmac.new(secret.encode(), signing_input, digestmod=hashlib.sha256).digest()
+        if not hmac.compare_digest(expected_sig, _b64url_decode(sig_b)):
+            raise ValueError("Invalid signature")
+        payload = json.loads(_b64url_decode(body_b))
+        if payload.get("exp", 0) < _time.time():
+            raise ValueError("Token expired")
+        return payload
+    except ValueError:
+        raise
+    except Exception as exc:
+        raise ValueError(f"Token decode error: {exc}") from exc
+
 
 # ── Auth ───────────────────────────────────────────────────────────────────────
+def _make_token() -> str:
+    now = int(_time.time())
+    payload = {"sub": "admin", "iat": now, "exp": now + _TOKEN_TTL_HOURS * 3600}
+    secret = settings.JWT_SECRET or settings.ADMIN_TOKEN or "fallback-dev-secret"
+    return _jwt_encode(payload, secret)
+
+
 def _auth(authorization: str | None):
-    if not authorization or authorization != f"Bearer {settings.ADMIN_TOKEN}":
+    if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Unauthorized")
+    token = authorization[7:]
+    secret = settings.JWT_SECRET or settings.ADMIN_TOKEN or "fallback-dev-secret"
+    try:
+        _jwt_decode(token, secret)
+    except ValueError as exc:
+        detail = "Token expired" if "expired" in str(exc) else "Invalid token"
+        raise HTTPException(status_code=401, detail=detail)
 
 
 # ── Login ──────────────────────────────────────────────────────────────────────
@@ -27,16 +86,35 @@ class LoginPayload(BaseModel):
     password: str
 
 
+_login_hits: dict = {}
+
+
+def _check_login_rate(ip: str) -> None:
+    now = _time.monotonic()
+    hits = [t for t in _login_hits.get(ip, []) if now - t < 60]
+    if len(hits) >= 10:
+        raise HTTPException(status_code=429, detail="Too many login attempts")
+    hits.append(now)
+    _login_hits[ip] = hits
+
+
 @router.post("/login")
-def login(body: LoginPayload):
+def login(body: LoginPayload, request: Request):
+    _check_login_rate(request.client.host if request.client else "unknown")
     if body.username == settings.ADMIN_USERNAME and body.password == settings.ADMIN_PASSWORD:
-        return {"token": settings.ADMIN_TOKEN}
+        return {"token": _make_token(), "expires_in": _TOKEN_TTL_HOURS * 3600}
     raise HTTPException(status_code=401, detail="Invalid credentials")
 
 
 # ── Verify token ───────────────────────────────────────────────────────────────
 @router.get("/verify")
 def verify(authorization: str = Header(None)):
+    _auth(authorization)
+    return {"ok": True, "expires_in": _TOKEN_TTL_HOURS * 3600}
+
+
+@router.post("/logout")
+def logout(authorization: str = Header(None)):
     _auth(authorization)
     return {"ok": True}
 

@@ -155,7 +155,11 @@ def closing_node(state: ChatState) -> dict:
             stream=True,
         )
     except Exception as exc:
-        response = f"Xin lỗi, có lỗi xảy ra. Vui lòng thử lại. ({exc})"
+        import logging
+        logging.getLogger(__name__).error(
+            "closing_node failed session=%s: %s", state.get("session_id", ""), exc, exc_info=True
+        )
+        response = "Xin lỗi, có lỗi kỹ thuật xảy ra. Vui lòng thử lại sau ít phút."
 
     new_state = {
         **state,
@@ -188,10 +192,11 @@ def general_node(state: ChatState) -> dict:
             session_id=state.get("session_id", ""),
             stream=True,
         )
-    except Exception:
-        response = (
-            "Xin chào! Tôi là TechShop AI. Tôi có thể giúp bạn tìm "
-            "laptop, điện thoại, máy tính bảng phù hợp. Bạn đang tìm kiếm gì? 😊"
+    except Exception as exc:
+        import logging
+        logging.getLogger(__name__).error(
+            "general_node failed session=%s: %s", state.get("session_id", ""), exc, exc_info=True
         )
+        response = "Xin chào! Tôi là TechShop AI, có thể giúp bạn tìm laptop, điện thoại, máy tính bảng. Bạn đang tìm gì?"
 
     return {**state, "response": response, "stage": "general"}

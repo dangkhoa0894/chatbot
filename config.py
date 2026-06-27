@@ -18,13 +18,13 @@ class Settings:
     }
 
     FB_PAGE_ACCESS_TOKEN: str = os.getenv("FB_PAGE_ACCESS_TOKEN", "")
-    FB_VERIFY_TOKEN: str = os.getenv("FB_VERIFY_TOKEN", "chatbot_verify_2024")
+    FB_VERIFY_TOKEN: str = os.getenv("FB_VERIFY_TOKEN", "")
     FB_APP_SECRET: str = os.getenv("FB_APP_SECRET", "")
 
     HOST: str = os.getenv("HOST", "0.0.0.0")
     PORT: int = int(os.getenv("PORT", "8290"))
 
-    ADMIN_TOKEN: str = os.getenv("ADMIN_TOKEN", "admin123")
+    ADMIN_TOKEN: str = os.getenv("ADMIN_TOKEN", "")
     ADMIN_USERNAME: str = os.getenv("ADMIN_USERNAME", "admin")
     ADMIN_PASSWORD: str = os.getenv("ADMIN_PASSWORD", "Admin@2026")
 
@@ -39,5 +39,25 @@ class Settings:
     # e.g. Slack incoming webhook, Freshdesk, Zalo OA webhook, etc.
     ESCALATION_WEBHOOK_URL: str = os.getenv("ESCALATION_WEBHOOK_URL", "")
 
+    JWT_SECRET: str = os.getenv("JWT_SECRET", "")
+    CORS_ORIGINS: str = os.getenv("CORS_ORIGINS", "http://localhost:8290")
+    SESSION_MAX_ENTRIES: int = int(os.getenv("SESSION_MAX_ENTRIES", "5000"))
+
 
 settings = Settings()
+
+
+def validate_config() -> None:
+    errors = []
+    if not settings.DEEPINFRA_API_KEY:
+        errors.append("DEEPINFRA_API_KEY is required")
+    if not settings.ADMIN_TOKEN:
+        errors.append("ADMIN_TOKEN is required (set a strong random string)")
+    if not settings.JWT_SECRET:
+        errors.append("JWT_SECRET is required (min 32 chars)")
+    if settings.JWT_SECRET and len(settings.JWT_SECRET) < 32:
+        errors.append("JWT_SECRET must be at least 32 characters")
+    if not settings.ADMIN_PASSWORD:
+        errors.append("ADMIN_PASSWORD is required")
+    if errors:
+        raise RuntimeError("Config validation failed:\n" + "\n".join(f"  - {e}" for e in errors))

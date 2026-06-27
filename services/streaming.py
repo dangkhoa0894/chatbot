@@ -16,7 +16,10 @@ def emit_token(delta: str):
     q = _token_queue.get()
     loop = _main_loop.get()
     if q is not None and loop is not None and not loop.is_closed():
-        asyncio.run_coroutine_threadsafe(q.put(delta), loop)
+        try:
+            q.put_nowait(delta)
+        except asyncio.QueueFull:
+            pass
 
 
 def clear_streaming():

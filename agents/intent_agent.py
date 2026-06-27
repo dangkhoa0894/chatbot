@@ -207,6 +207,10 @@ def intent_node(state: ChatState) -> dict:
         m = re.search(r"\{.*\}", raw, re.DOTALL)
         result = json.loads(m.group() if m else raw)
     except Exception as exc:
+        import logging
+        logging.getLogger(__name__).warning(
+            "intent_node parse failed session=%s: %s", state.get("session_id", ""), exc
+        )
         result = {
             "intent": "general",
             "category": None,
