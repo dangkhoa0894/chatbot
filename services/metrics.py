@@ -38,6 +38,14 @@ class MetricsStore:
             s.ended = True
             s.end_time = time.time()
 
+    def session_reconnect(self, session_id: str):
+        s = self._sessions.get(session_id)
+        if s:
+            s.ended = False
+            s.end_time = 0.0
+        else:
+            self._sessions[session_id] = SessionMetrics()
+
     # ── Per-turn recording ───────────────────────────────────────────────────
     def record_turn(
         self,

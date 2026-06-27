@@ -1,6 +1,6 @@
 (() => {
   const EMOJI = { laptop: '💻', phone: '📱', tablet: '📟', default: '📦' };
-  const CATEGORY_EMOJI = { laptop: '💻', phone: '📱', tablet: '📟' };
+  const SESSION_KEY = 'techshop_session_id';
 
   let ws = null;
   let sessionId = null;
@@ -17,8 +17,12 @@
   // ── WebSocket ──────────────────────────────────────────────────────────────
   function connect() {
     const protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-    ws = new WebSocket(`${protocol}://${location.host}/ws`);
+    const savedId = localStorage.getItem(SESSION_KEY) || '';
+    const url = savedId
+      ? `${protocol}://${location.host}/ws?session_id=${encodeURIComponent(savedId)}`
+      : `${protocol}://${location.host}/ws`;
 
+    ws = new WebSocket(url);
     setBanner('connecting', '🔄 Đang kết nối...');
 
     ws.onopen = () => {
@@ -52,8 +56,14 @@
     switch (data.type) {
       case 'connected':
         sessionId = data.session_id;
+        localStorage.setItem(SESSION_KEY, sessionId);
         sessionLabel.textContent = `Session: ${sessionId.slice(0, 8)}`;
-        appendBotMessage(data.message);
+
+        if (data.resumed && data.history?.length) {
+          renderHistory(data.history);
+        } else {
+          appendBotMessage(data.message);
+        }
         break;
 
       case 'typing':
@@ -88,7 +98,7 @@
     ws.send(JSON.stringify({ message: text }));
   }
 
-  window.send = send; // expose for quick-reply buttons
+  window.send = send;
 
   // ── Render helpers ────────────────────────────────────────────────────────
   function appendUserMessage(text) {
@@ -103,13 +113,8 @@
 
   function appendBotMessage(text, meta) {
     const wrap = document.createElement('div');
-    wrap.style.display = 'flex';
-    wrap.style.flexDirection = 'column';
-    wrap.style.gap = '8px';
-    wrap.style.alignSelf = 'flex-start';
-    wrap.style.animation = 'fadeIn 0.25s ease';
+    wrap.style.cssText = 'display:flex;flex-direction:column;gap:8px;align-self:flex-start;animation:fadeIn 0.25s ease';
 
-    // Main bubble
     const el = document.createElement('div');
     el.className = 'message bot';
     el.innerHTML = `
@@ -117,18 +122,38 @@
       <div class="bubble">${formatText(text)}</div>`;
     wrap.appendChild(el);
 
-    // Product cards
-    if (meta?.products?.length) {
-      const cards = buildProductCards(meta.products);
-      wrap.appendChild(cards);
-    }
-
-    // Order confirmation card
-    if (meta?.order?.status === 'confirmed') {
-      wrap.appendChild(buildOrderCard(meta.order));
-    }
+    if (meta?.products?.length) wrap.appendChild(buildProductCards(meta.products));
+    if (meta?.order?.status === 'confirmed') wrap.appendChild(buildOrderCard(meta.order));
 
     messagesEl.appendChild(wrap);
+    scrollBottom();
+  }
+
+  // Render message history returned on session resume (no animation, no product cards)
+  function renderHistory(history) {
+    history.forEach(msg => {
+      if (msg.role === 'user') {
+        const el = document.createElement('div');
+        el.className = 'message user';
+        el.innerHTML = `<div class="msg-avatar">🧑</div><div class="bubble">${escHtml(msg.content)}</div>`;
+        messagesEl.appendChild(el);
+      } else if (msg.role === 'assistant') {
+        const wrap = document.createElement('div');
+        wrap.style.cssText = 'display:flex;flex-direction:column;gap:8px;align-self:flex-start';
+        const el = document.createElement('div');
+        el.className = 'message bot';
+        el.innerHTML = `<div class="msg-avatar">🤖</div><div class="bubble">${formatText(msg.content)}</div>`;
+        wrap.appendChild(el);
+        messagesEl.appendChild(wrap);
+      }
+    });
+
+    // Divider so user knows what's old vs new
+    const divider = document.createElement('div');
+    divider.style.cssText = 'text-align:center;font-size:11px;color:#94a3b8;padding:4px 0;user-select:none';
+    divider.textContent = '— Hội thoại đã được khôi phục —';
+    messagesEl.appendChild(divider);
+
     scrollBottom();
   }
 
@@ -231,6 +256,7 @@
     if (sessionId) {
       await fetch(`/api/session/${sessionId}`, { method: 'DELETE' }).catch(() => {});
     }
+    localStorage.removeItem(SESSION_KEY);
     messagesEl.innerHTML = '';
     sessionId = null;
     ws?.close();
@@ -279,7 +305,6 @@
   }
 
   function formatText(text) {
-    // Convert markdown-ish to HTML
     return escHtml(text)
       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
       .replace(/\*(.*?)\*/g, '<em>$1</em>')

@@ -4,25 +4,48 @@ import json
 import time
 from fastapi import WebSocket, WebSocketDisconnect
 from graph.orchestrator import process_message, get_session_state, clear_session
+from services import session_store
 from services.rate_limiter import rate_limiter
 from services.metrics import metrics
 from middleware.guardrails import check_input, check_output
+
+_WELCOME = (
+    "👋 Xin chào! Tôi là TechShop AI — trợ lý tư vấn mua sắm điện tử.\n"
+    "Tôi có thể giúp bạn tìm laptop, điện thoại, máy tính bảng phù hợp nhất.\n\n"
+    "Bạn đang tìm kiếm sản phẩm gì? 😊"
+)
+
+# Max messages sent back to client on resume (keep payload small)
+_HISTORY_LIMIT = 40
 
 
 class ConnectionManager:
     def __init__(self):
         self._active: dict[str, WebSocket] = {}
 
-    async def connect(self, websocket: WebSocket) -> str:
+    async def connect(self, websocket: WebSocket, requested_id: str = "") -> tuple[str, bool]:
+        """Accept connection. Reuse existing session if requested_id is valid."""
         await websocket.accept()
-        session_id = str(uuid.uuid4())
+
+        resumed = False
+        if requested_id:
+            existing = await session_store.get_session(requested_id)
+            if existing is not None:
+                session_id = requested_id
+                resumed = True
+            else:
+                session_id = str(uuid.uuid4())
+        else:
+            session_id = str(uuid.uuid4())
+
         self._active[session_id] = websocket
-        return session_id
+        return session_id, resumed
 
     async def disconnect(self, session_id: str):
+        """Remove from active connections but keep session in store for future reconnects."""
         self._active.pop(session_id, None)
         metrics.session_end(session_id)
-        await clear_session(session_id)
+        # Session is NOT deleted here — client may reconnect and resume
 
     async def send(self, session_id: str, data: dict):
         ws = self._active.get(session_id)
@@ -34,17 +57,23 @@ manager = ConnectionManager()
 
 
 async def websocket_endpoint(websocket: WebSocket):
-    session_id = await manager.connect(websocket)
-    metrics.session_start(session_id)
+    requested_id = websocket.query_params.get("session_id", "")
+    session_id, resumed = await manager.connect(websocket, requested_id)
+
+    if resumed:
+        metrics.session_reconnect(session_id)
+        state = await get_session_state(session_id)
+        history = state.get("messages", [])[-_HISTORY_LIMIT:]
+    else:
+        metrics.session_start(session_id)
+        history = []
 
     await manager.send(session_id, {
         "type": "connected",
         "session_id": session_id,
-        "message": (
-            "👋 Xin chào! Tôi là TechShop AI — trợ lý tư vấn mua sắm điện tử.\n"
-            "Tôi có thể giúp bạn tìm laptop, điện thoại, máy tính bảng phù hợp nhất.\n\n"
-            "Bạn đang tìm kiếm sản phẩm gì? 😊"
-        ),
+        "resumed": resumed,
+        "history": history,
+        "message": _WELCOME,
     })
 
     try:
@@ -85,15 +114,12 @@ async def websocket_endpoint(websocket: WebSocket):
             turn_t0 = time.perf_counter()
             ttft_ms: float | None = None
             first_token = True
-            error_occurred = False
 
             try:
-                # Start graph processing; tokens stream to browser in parallel
                 process_task = asyncio.create_task(
                     process_message(session_id, user_text, token_queue)
                 )
 
-                # Forward tokens to client until sentinel (None)
                 while True:
                     try:
                         token = await asyncio.wait_for(token_queue.get(), timeout=60.0)
@@ -109,7 +135,6 @@ async def websocket_endpoint(websocket: WebSocket):
                 response = await process_task
                 latency_ms = (time.perf_counter() - turn_t0) * 1000
 
-                # ── Guardrails: output check ─────────────────────────────────
                 response = check_output(response)
 
                 state = await get_session_state(session_id)
@@ -137,7 +162,6 @@ async def websocket_endpoint(websocket: WebSocket):
                 })
 
             except Exception:
-                error_occurred = True
                 metrics.record_turn(session_id, error=True)
                 await manager.send(session_id, {
                     "type": "error",
