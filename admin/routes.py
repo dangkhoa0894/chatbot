@@ -288,6 +288,41 @@ class AdminMessagePayload(BaseModel):
     content: str
 
 
+@router.post("/sessions/{session_id}/accept")
+async def accept_session(
+    session_id: str,
+    authorization: str = Header(None),
+):
+    """Admin explicitly takes ownership — notifies user and mutes the bot."""
+    _auth(authorization)
+    from channels.websocket_handler import manager
+    from services import session_monitor
+    from services import session_store
+
+    info = session_monitor.get(session_id)
+    if info is None:
+        raise HTTPException(status_code=404, detail="Session not active")
+    if info.get("admin_joined"):
+        return {"ok": True, "already_joined": True}
+
+    session_monitor.set_admin_joined(session_id, True)
+
+    _JOIN_MSG = "Xin chào! Nhân viên hỗ trợ TechShop AI đã tiếp nhận. Tôi sẽ giúp bạn ngay!"
+    await manager.send(session_id, {
+        "type": "human_message",
+        "content": _JOIN_MSG,
+        "agent_name": "Nhân viên hỗ trợ",
+    })
+
+    state = await session_store.get_session(session_id) or {}
+    msgs = state.get("messages", [])
+    msgs.append({"role": "support", "content": _JOIN_MSG})
+    state["messages"] = msgs
+    await session_store.save_session(session_id, state)
+
+    return {"ok": True, "already_joined": False}
+
+
 @router.post("/sessions/{session_id}/message")
 async def send_to_session(
     session_id: str,

@@ -106,7 +106,14 @@
 
       case 'human_message':
         hideTyping();
+        clearStream();
+        setInputEnabled(true);
         appendHumanSupport(data.content, data.agent_name || 'Nhân viên hỗ trợ');
+        break;
+
+      case 'ack':
+        // Bot is muted (admin handling) — just re-enable input so user can keep typing
+        setInputEnabled(true);
         break;
 
       case 'error':
@@ -287,9 +294,8 @@
 
   // ── Welcome state ────────────────────────────────────────────────
   function hideWelcome() {
-    if (welcomeEl && welcomeEl.parentNode) {
-      welcomeEl.style.display = 'none';
-    }
+    const el = document.getElementById('welcome-state');
+    if (el) el.style.display = 'none';
   }
 
   // ── CSAT ─────────────────────────────────────────────────────────
@@ -340,7 +346,6 @@
     if (sessionId) await fetch(`/api/session/${sessionId}`, { method: 'DELETE' }).catch(() => {});
     localStorage.removeItem(SESSION_KEY);
     messagesEl.innerHTML = '';
-    // re-add welcome state
     const w = document.createElement('div');
     w.className = 'welcome-wrap';
     w.id = 'welcome-state';
@@ -348,7 +353,9 @@
     messagesEl.appendChild(w);
     _csatDone = false;
     sessionId = null;
-    ws?.close();
+    // Prevent ws.onclose from scheduling its own reconnect — we handle it below
+    if (ws) { ws.onclose = null; ws.close(); ws = null; }
+    reconnectAttempts = 0;
     setTimeout(connect, 200);
   };
 

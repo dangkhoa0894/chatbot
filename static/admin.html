@@ -608,7 +608,8 @@ canvas{display:block;width:100%;height:160px}
                 <div class="chat-pane-sub" id="chat-session-sub">—</div>
               </div>
               <div style="display:flex;gap:6px;align-items:center">
-                <button class="btn btn-ghost btn-sm" onclick="resolveMonitorSession()" id="btn-resolve-session" style="display:none">✓ Giải quyết</button>
+                <button class="btn btn-green btn-sm" onclick="acceptMonitorSession()" id="btn-accept-session" style="display:none">▶ Nhận xử lý</button>
+                <button class="btn btn-ghost btn-sm" onclick="resolveMonitorSession()" id="btn-resolve-session" style="display:none">✓ Kết thúc</button>
               </div>
             </div>
             <div class="chat-pane-msgs" id="chat-pane-msgs">
@@ -1482,26 +1483,37 @@ function renderSessionList(sessions) {
 async function selectSession(sessionId) {
   _selectedSession = sessionId;
   renderSessionList(_monitorSessions);
-
-  const s = _monitorSessions.find(x => x.session_id === sessionId);
-  document.getElementById('chat-session-id').textContent = sessionId.slice(0, 16) + '…';
-  const subParts = [];
-  if (s?.escalated) subParts.push('⚠ Cần hỗ trợ');
-  if (s?.customer_name) subParts.push(s.customer_name + (s.customer_phone ? ' · ' + s.customer_phone : ''));
-  document.getElementById('chat-session-sub').textContent = subParts.join(' — ') || 'Đang hoạt động';
-
-  const resolveBtn = document.getElementById('btn-resolve-session');
-  if (resolveBtn) resolveBtn.style.display = s?.escalated ? '' : 'none';
+  _updateChatHeader(sessionId);
 
   document.getElementById('chat-no-selection').style.display = 'none';
   document.getElementById('chat-pane-inner').style.display = 'flex';
-
-  // Mobile: show chat panel
   document.getElementById('monitor-wrap').classList.add('chat-open');
 
   await loadChatHistory(sessionId);
   clearInterval(_chatTimer);
   _chatTimer = setInterval(() => { if (_selectedSession) loadChatHistory(_selectedSession); }, 3000);
+}
+
+function _updateChatHeader(sessionId) {
+  const s = _monitorSessions.find(x => x.session_id === sessionId);
+  document.getElementById('chat-session-id').textContent = sessionId.slice(0, 16) + '…';
+
+  const subParts = [];
+  if (s?.admin_joined) subParts.push('🟢 Đang xử lý');
+  else if (s?.escalated) subParts.push('🔴 Cần hỗ trợ');
+  if (s?.customer_name) subParts.push(s.customer_name + (s.customer_phone ? ' · ' + s.customer_phone : ''));
+  document.getElementById('chat-session-sub').textContent = subParts.join(' — ') || 'Đang hoạt động';
+
+  const acceptBtn = document.getElementById('btn-accept-session');
+  const resolveBtn = document.getElementById('btn-resolve-session');
+  if (acceptBtn) acceptBtn.style.display = (s?.escalated && !s?.admin_joined) ? '' : 'none';
+  if (resolveBtn) resolveBtn.style.display = s?.admin_joined ? '' : 'none';
+
+  // Disable input unless admin has joined
+  const textarea = document.getElementById('admin-msg-input');
+  const sendBtn = document.querySelector('.chat-pane-footer button');
+  if (textarea) textarea.disabled = !s?.admin_joined;
+  if (sendBtn) sendBtn.disabled = !s?.admin_joined;
 }
 
 function closeChatPane() {
@@ -1558,12 +1570,22 @@ async function sendAdminMessage() {
   } catch(e) {}
 }
 
+async function acceptMonitorSession() {
+  if (!_selectedSession) return;
+  try {
+    await fetch(`/admin/api/sessions/${_selectedSession}/accept`, { method: 'POST', headers: auth() });
+    await loadLiveSessions();
+    _updateChatHeader(_selectedSession);
+  } catch(e) {}
+}
+
 async function resolveMonitorSession() {
   if (!_selectedSession) return;
-  await fetch(`/admin/api/sessions/${_selectedSession}/resolve`, { method: 'POST', headers: auth() });
-  document.getElementById('btn-resolve-session').style.display = 'none';
-  document.getElementById('chat-session-sub').textContent = 'Đã giải quyết';
-  await loadLiveSessions();
+  try {
+    await fetch(`/admin/api/sessions/${_selectedSession}/resolve`, { method: 'POST', headers: auth() });
+    await loadLiveSessions();
+    _updateChatHeader(_selectedSession);
+  } catch(e) {}
 }
 
 function startMonitor() {

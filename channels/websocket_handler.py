@@ -125,6 +125,16 @@ async def websocket_endpoint(websocket: WebSocket):
 
             session_monitor.touch(session_id)
 
+            # ── Admin handling: mute bot, save message, re-enable input ──────
+            if session_monitor.is_admin_handling(session_id):
+                state = await session_store.get_session(session_id) or {}
+                msgs = state.get("messages", [])
+                msgs.append({"role": "user", "content": user_text})
+                state["messages"] = msgs
+                await session_store.save_session(session_id, state)
+                await manager.send(session_id, {"type": "ack"})
+                continue
+
             # ── Rate limiting ────────────────────────────────────────────────
             if not rate_limiter.is_allowed(session_id):
                 await manager.send(session_id, {
