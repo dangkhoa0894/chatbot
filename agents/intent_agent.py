@@ -2,6 +2,7 @@ import json
 import re
 from models.state import ChatState
 from services.llm_client import chat
+from services.metrics import metrics as _metrics
 
 # ── Fast-path keyword rules (no LLM call needed) ───────────────────────────────
 _GREETING_TRIGGERS = {'xin chào', 'chào', 'hi', 'hello', 'hey', 'alo', 'xin chao', 'chao', 'helo'}
@@ -159,6 +160,7 @@ def intent_node(state: ChatState) -> dict:
     # Try fast-path first to avoid an unnecessary LLM call
     fast = _fast_intent(last_user)
     if fast:
+        _metrics.record_fast_path(state.get("session_id", ""))
         existing_order = state.get("order_info", {})
         new_order = fast.get("order_info") or {}
         merged_order = {**existing_order, **{k: v for k, v in new_order.items() if v}}
@@ -177,6 +179,7 @@ def intent_node(state: ChatState) -> dict:
         for m in messages[-6:]
     )
 
+    _metrics.record_intent_llm(state.get("session_id", ""))
     try:
         raw = chat(
             messages=[

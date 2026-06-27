@@ -1,9 +1,11 @@
 import uuid
 import asyncio
 import json
+import time
 from fastapi import WebSocket, WebSocketDisconnect
 from graph.orchestrator import process_message, get_session_state, clear_session
 from services.rate_limiter import rate_limiter
+from services.metrics import metrics
 from middleware.guardrails import check_input, check_output
 
 
@@ -19,6 +21,7 @@ class ConnectionManager:
 
     async def disconnect(self, session_id: str):
         self._active.pop(session_id, None)
+        metrics.session_end(session_id)
         await clear_session(session_id)
 
     async def send(self, session_id: str, data: dict):
@@ -32,6 +35,7 @@ manager = ConnectionManager()
 
 async def websocket_endpoint(websocket: WebSocket):
     session_id = await manager.connect(websocket)
+    metrics.session_start(session_id)
 
     await manager.send(session_id, {
         "type": "connected",
@@ -78,6 +82,10 @@ async def websocket_endpoint(websocket: WebSocket):
             await manager.send(session_id, {"type": "typing", "is_typing": True})
 
             token_queue: asyncio.Queue = asyncio.Queue()
+            turn_t0 = time.perf_counter()
+            ttft_ms: float | None = None
+            first_token = True
+            error_occurred = False
 
             try:
                 # Start graph processing; tokens stream to browser in parallel
@@ -93,14 +101,29 @@ async def websocket_endpoint(websocket: WebSocket):
                         break
                     if token is None:
                         break
+                    if first_token:
+                        ttft_ms = (time.perf_counter() - turn_t0) * 1000
+                        first_token = False
                     await manager.send(session_id, {"type": "token", "delta": token})
 
                 response = await process_task
+                latency_ms = (time.perf_counter() - turn_t0) * 1000
 
                 # ── Guardrails: output check ─────────────────────────────────
                 response = check_output(response)
 
                 state = await get_session_state(session_id)
+                order_confirmed = state.get("stage") == "confirmed"
+
+                metrics.record_turn(
+                    session_id,
+                    intent=state.get("intent", ""),
+                    latency_ms=latency_ms,
+                    ttft_ms=ttft_ms,
+                    error=False,
+                    order_placed=order_confirmed,
+                )
+
                 await manager.send(session_id, {
                     "type": "message",
                     "role": "assistant",
@@ -109,11 +132,13 @@ async def websocket_endpoint(websocket: WebSocket):
                         "intent": state.get("intent"),
                         "stage": state.get("stage"),
                         "products": _slim_products(state.get("recommended_products", [])),
-                        "order": state.get("order_info") if state.get("stage") == "confirmed" else None,
+                        "order": state.get("order_info") if order_confirmed else None,
                     },
                 })
 
             except Exception:
+                error_occurred = True
+                metrics.record_turn(session_id, error=True)
                 await manager.send(session_id, {
                     "type": "error",
                     "content": "Xin lỗi, có lỗi xảy ra. Vui lòng thử lại.",

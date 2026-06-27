@@ -64,6 +64,14 @@ def list_agents(authorization: str = Header(None)):
     return get_distinct_agents()
 
 
+# ── Chatbot Metrics ────────────────────────────────────────────────────────────
+@router.get("/metrics")
+def get_metrics(hours: int = Query(24, le=168), authorization: str = Header(None)):
+    _auth(authorization)
+    from services.metrics import metrics
+    return metrics.summary(hours)
+
+
 # ── Products ───────────────────────────────────────────────────────────────────
 class ProductPayload(BaseModel):
     id: Optional[str] = None
