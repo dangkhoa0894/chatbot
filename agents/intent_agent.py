@@ -5,27 +5,105 @@ from services.llm_client import chat
 
 # ── Fast-path keyword rules (no LLM call needed) ───────────────────────────────
 _GREETING_TRIGGERS = {'xin chào', 'chào', 'hi', 'hello', 'hey', 'alo', 'xin chao', 'chao', 'helo'}
+
 _ADDRESS_RE = re.compile(
     r'\b\d+[\s,/\\]*.{0,30}(đường|phố|phường|quận|huyện|tỉnh|thành phố|tp\.?)\b',
     re.IGNORECASE,
 )
+
+# Category keywords that unambiguously indicate a product query
+_CAT_LAPTOP  = ['laptop', 'macbook', 'thinkpad', 'surface pro', 'máy tính xách tay']
+_CAT_PHONE   = ['điện thoại', 'iphone', 'smartphone', 'android phone']
+_CAT_TABLET  = ['máy tính bảng', 'ipad', 'galaxy tab', 'tablet']
+
+# Budget pattern: e.g. "dưới 20 triệu", "tầm 30tr", "20-30 triệu"
+_BUDGET_RE = re.compile(r'(\d+(?:[.,]\d+)?)\s*(?:triệu|tr\b)', re.IGNORECASE)
+
+_USE_CASE_MAP = {
+    'lập trình': 'lập trình', 'coding': 'lập trình', 'code': 'lập trình',
+    'gaming': 'gaming', 'game': 'gaming',
+    'học tập': 'học tập', 'sinh viên': 'học tập',
+    'văn phòng': 'văn phòng', 'làm việc': 'văn phòng',
+    'chụp ảnh': 'chụp ảnh',
+    'đồ họa': 'đồ họa', 'thiết kế': 'đồ họa', 'design': 'đồ họa',
+    'vẽ': 'vẽ',
+}
+
+
+def _fast_product_intent(text: str) -> dict | None:
+    """Classify product_inquiry and extract requirements via regex. No LLM needed."""
+    t = text.lower()
+    category = None
+    for kw in _CAT_LAPTOP:
+        if kw in t:
+            category = 'laptop'; break
+    if not category:
+        for kw in _CAT_PHONE:
+            if kw in t:
+                category = 'phone'; break
+    if not category:
+        for kw in _CAT_TABLET:
+            if kw in t:
+                category = 'tablet'; break
+    if not category:
+        return None
+
+    # Extract budget
+    amounts = [float(m.replace(',', '.')) * 1_000_000 for m in _BUDGET_RE.findall(text)]
+    budget_max = budget_min = None
+    if amounts:
+        if any(w in t for w in ('dưới', 'tối đa', 'không quá', 'tầm', 'khoảng')):
+            budget_max = int(max(amounts))
+        elif any(w in t for w in ('từ', 'trên', 'tối thiểu', 'ít nhất')):
+            budget_min = int(min(amounts))
+        elif len(amounts) >= 2:
+            budget_min, budget_max = int(min(amounts)), int(max(amounts))
+        else:
+            budget_max = int(amounts[0])
+
+    # Extract use case
+    use_case, keywords = None, []
+    for kw, uc in _USE_CASE_MAP.items():
+        if kw in t:
+            use_case = uc
+            keywords.append(kw)
+            break
+
+    return {
+        'intent': 'product_inquiry',
+        'category': category,
+        'requirements': {
+            'budget_max': budget_max,
+            'budget_min': budget_min,
+            'use_case': use_case,
+            'brand': None,
+            'keywords': keywords,
+        },
+        'order_info': {},
+        'is_ready_to_order': False,
+        'reasoning': 'fast-path product',
+    }
 
 
 def _fast_intent(text: str) -> dict | None:
     """Return a pre-classified result for obvious cases, else None to fall through to LLM."""
     t = text.lower().strip()
     words = set(re.split(r'\W+', t))
+
     # Pure greeting with no product keywords
     if words & _GREETING_TRIGGERS and len(text) < 40 and not any(
         k in t for k in ('laptop', 'điện thoại', 'phone', 'tablet', 'máy', 'giá', 'mua')
     ):
         return {'intent': 'greeting', 'category': None, 'requirements': {},
                 'order_info': {}, 'is_ready_to_order': False, 'reasoning': 'fast-path'}
-    # Message contains a clear street address → order confirmation
+
+    # Clear street address → order confirmation
     if _ADDRESS_RE.search(text):
         return {'intent': 'order_confirm', 'category': None, 'requirements': {},
                 'order_info': {}, 'is_ready_to_order': True, 'reasoning': 'fast-path address'}
-    return None
+
+    # Unambiguous product query → skip LLM, extract requirements via regex
+    return _fast_product_intent(text)
 
 _SYSTEM = """Bạn là AI phân tích ý định khách hàng cho cửa hàng điện tử bán laptop, điện thoại, máy tính bảng.
 

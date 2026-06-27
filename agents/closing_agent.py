@@ -1,28 +1,25 @@
 import uuid
 from models.state import ChatState
-from services.product_service import format_price, format_products_for_llm
+from services.product_service import format_price, format_products_compact
 from services.llm_client import chat
 
-_SYSTEM = """Bạn là chuyên gia tư vấn & chốt sale sản phẩm điện tử, nhiệt tình và thân thiện.
+_SYSTEM = """Bạn là chuyên gia tư vấn & chốt sale của TechShop AI (laptop, điện thoại, máy tính bảng).
 
-Tùy tình huống hãy hành động phù hợp:
+Dựa trên ngữ cảnh, sản phẩm và thông tin đặt hàng, thực hiện đúng một trong các trường hợp:
 
-**[A] Vừa tìm được sản phẩm mới (có draft tư vấn từ search agent)**:
-→ Trình bày sản phẩm gợi ý một cách hấp dẫn dựa trên draft
-→ Tạo urgency nhẹ nhàng: "tồn kho có hạn", "đang được nhiều người quan tâm"
-→ Hỏi khách có muốn đặt hàng hoặc tìm hiểu thêm không
+**[A] Tư vấn sản phẩm lần đầu** (stage=search, chưa giới thiệu sản phẩm):
+→ Giới thiệu 2-3 sản phẩm PHÙ HỢP NHẤT, giải thích ngắn TẠI SAO phù hợp với nhu cầu cụ thể
+→ Dùng ✅ cho ưu điểm nổi bật, 🏆 cho sản phẩm đề xuất số 1
+→ Kết bằng câu hỏi nhẹ dẫn tới đặt hàng
 
-**[B] Khách hỏi thêm / do dự về giá**:
-→ Tư vấn thêm về sản phẩm, so sánh nếu cần
-→ Xử lý objection: quá đắt → gợi ý trả góp 0% hoặc sản phẩm giá thấp hơn
-→ Nhấn mạnh giá trị dài hạn
+**[B] Khách hỏi thêm / phân vân** (đã có sản phẩm từ trước, stage=closing):
+→ Xử lý objection, so sánh thêm hoặc gợi ý trả góp 0% nếu khách ngại giá
+→ Tạo urgency nhẹ: "tồn kho có hạn", "đang được nhiều người quan tâm"
 
-**[C] Khách đã đồng ý mua / cung cấp địa chỉ (order_confirm)**:
-→ Xác nhận sản phẩm và địa chỉ với khách
+**[C] Khách xác nhận mua** (intent=order_confirm):
 → Nếu THIẾU địa chỉ → hỏi địa chỉ giao hàng (bắt buộc)
-→ Nếu ĐỦ thông tin (sản phẩm + địa chỉ) → tạo xác nhận đơn hàng:
+→ Nếu ĐỦ thông tin (sản phẩm + địa chỉ) → xuất xác nhận đơn hàng:
 
-```
 🎉 ĐẶT HÀNG THÀNH CÔNG!
 ━━━━━━━━━━━━━━━━━━━━
 📦 Sản phẩm: [tên đầy đủ]
@@ -35,9 +32,8 @@ Tùy tình huống hãy hành động phù hợp:
 💳 Thanh toán: COD khi nhận hàng
 ━━━━━━━━━━━━━━━━━━━━
 Cảm ơn bạn đã tin tưởng TechShop AI! 🙏
-```
 
-Phong cách: Nhiệt tình, thân thiện, tiếng Việt tự nhiên. Dùng emoji vừa phải. Ngắn gọn, không dài dòng."""
+Phong cách: Thân thiện, ngắn gọn, tiếng Việt tự nhiên, emoji vừa phải. Không dài dòng."""
 
 _GENERAL_SYSTEM = """Bạn là nhân viên hỗ trợ khách hàng thân thiện của TechShop AI — cửa hàng điện tử bán laptop, điện thoại, máy tính bảng.
 
@@ -47,13 +43,8 @@ Nhiệm vụ:
 - Giới thiệu các dòng sản phẩm có sẵn
 - Luôn kết thúc bằng câu mời tư vấn sản phẩm hoặc hỏi nhu cầu của khách
 
-Phong cách: Thân thiện, ngắn gọn, dùng emoji phù hợp, tiếng Việt tự nhiên.
-
-Thông tin:
-- Bảo hành: 12 tháng chính hãng
-- Đổi trả: 7 ngày nếu lỗi sản xuất
-- Vận chuyển: miễn phí nội thành, 2-3 ngày làm việc
-- Thanh toán: COD, chuyển khoản, trả góp 0%"""
+Phong cách: Thân thiện, ngắn gọn, emoji phù hợp, tiếng Việt tự nhiên.
+Thông tin: Bảo hành 12 tháng | Đổi trả 7 ngày | Ship miễn phí nội thành | Thanh toán COD/CK/trả góp 0%"""
 
 
 def closing_node(state: ChatState) -> dict:
@@ -62,15 +53,16 @@ def closing_node(state: ChatState) -> dict:
     products = state.get("recommended_products", [])
     order_info = state.get("order_info", {})
     is_ready = state.get("is_ready_to_order", False)
-    search_draft = state.get("_search_draft", "")
+    stage = state.get("stage", "")
 
     context = "\n".join(
         f"{'Khách' if m['role'] == 'user' else 'Bot'}: {m['content']}"
-        for m in messages[-6:]
+        for m in messages[-4:]
     )
 
     has_address = bool(order_info.get("address"))
 
+    # Resolve the product the customer is interested in
     selected = state.get("selected_product")
     if not selected and order_info.get("product_hint") and products:
         hint = order_info["product_hint"].lower()
@@ -81,30 +73,38 @@ def closing_node(state: ChatState) -> dict:
     elif not selected and products and intent == "order_confirm":
         selected = products[0]
 
-    situation_parts = []
-    if search_draft:
-        situation_parts.append(f"[Draft tư vấn từ search agent]:\n{search_draft}")
+    # Build compact situation block
+    parts = [
+        f"[Stage]: {stage} | [Intent]: {intent} | "
+        f"[Sẵn sàng mua]: {'có' if is_ready else 'chưa'} | "
+        f"[Địa chỉ]: {'có' if has_address else 'chưa có'}"
+    ]
+
     if products:
-        situation_parts.append(f"[Sản phẩm được gợi ý]:\n{format_products_for_llm(products[:3])}")
+        parts.append(f"[Sản phẩm phù hợp]:\n{format_products_compact(products[:3])}")
+
     if selected:
-        situation_parts.append(
+        parts.append(
             f"[Sản phẩm khách quan tâm]: {selected['name']} — {format_price(selected['price'])}"
         )
-    if order_info:
-        lines = []
-        for k, label in [("product_hint", "SP muốn mua"), ("address", "Địa chỉ"), ("name", "Tên"), ("phone", "SĐT")]:
-            if order_info.get(k):
-                lines.append(f"{label}: {order_info[k]}")
-        if lines:
-            situation_parts.append("[Thông tin đặt hàng]:\n" + "\n".join(lines))
 
-    situation_parts.append(f"[Intent]: {intent} | [Sẵn sàng đặt]: {'Có' if is_ready else 'Chưa'} | [Có địa chỉ]: {'Có' if has_address else 'Chưa'}")
+    if order_info:
+        lines = [
+            f"{label}: {order_info[k]}"
+            for k, label in [
+                ("product_hint", "SP muốn mua"), ("address", "Địa chỉ"),
+                ("name", "Tên"), ("phone", "SĐT"),
+            ]
+            if order_info.get(k)
+        ]
+        if lines:
+            parts.append("[Thông tin đặt hàng]:\n" + "\n".join(lines))
 
     is_confirming = intent == "order_confirm" and has_address and (selected or order_info.get("product_hint"))
     order_id = None
     if is_confirming:
         order_id = uuid.uuid4().hex[:6].upper()
-        situation_parts.append(f"[Mã đơn hàng mới]: #ORD-{order_id}")
+        parts.append(f"[Mã đơn hàng mới]: #ORD-{order_id}")
 
     try:
         response = chat(
@@ -112,10 +112,10 @@ def closing_node(state: ChatState) -> dict:
                 {"role": "system", "content": _SYSTEM},
                 {
                     "role": "user",
-                    "content": f"Lịch sử hội thoại:\n{context}\n\n" + "\n\n".join(situation_parts),
+                    "content": f"Lịch sử hội thoại:\n{context}\n\n" + "\n\n".join(parts),
                 },
             ],
-            max_tokens=1000,
+            max_tokens=800,
             agent="closing",
             session_id=state.get("session_id", ""),
         )
@@ -126,12 +126,15 @@ def closing_node(state: ChatState) -> dict:
         **state,
         "response": response,
         "stage": "confirmed" if is_confirming else "closing",
-        "_search_draft": "",
     }
     if selected:
         new_state["selected_product"] = selected
     if is_confirming and order_id:
-        new_state["order_info"] = {**order_info, "order_id": f"ORD-{order_id}", "status": "confirmed"}
+        new_state["order_info"] = {
+            **order_info,
+            "order_id": f"ORD-{order_id}",
+            "status": "confirmed",
+        }
 
     return new_state
 
@@ -148,11 +151,14 @@ def general_node(state: ChatState) -> dict:
                 {"role": "system", "content": _GENERAL_SYSTEM},
                 {"role": "user", "content": context},
             ],
-            max_tokens=600,
+            max_tokens=500,
             agent="general",
             session_id=state.get("session_id", ""),
         )
     except Exception:
-        response = "Xin chào! Tôi là TechShop AI. Tôi có thể giúp bạn tìm laptop, điện thoại, máy tính bảng phù hợp. Bạn đang tìm kiếm sản phẩm gì? 😊"
+        response = (
+            "Xin chào! Tôi là TechShop AI. Tôi có thể giúp bạn tìm "
+            "laptop, điện thoại, máy tính bảng phù hợp. Bạn đang tìm kiếm gì? 😊"
+        )
 
     return {**state, "response": response, "stage": "general"}

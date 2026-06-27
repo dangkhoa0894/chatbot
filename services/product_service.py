@@ -482,3 +482,24 @@ def format_products_for_llm(products: List[dict]) -> str:
             f"  Tồn kho: {p['stock']} cái | Rating: {p['rating']}/5\n"
         )
     return "\n".join(lines)
+
+
+def format_products_compact(products: List[dict]) -> str:
+    """Compact format (~40% fewer tokens) for use in closing/search prompts."""
+    lines = []
+    for p in products:
+        s = p.get("specs", {})
+        key_specs = " | ".join(x for x in [
+            s.get("cpu"), s.get("ram"), s.get("storage"),
+            f"Pin {s['battery']}" if s.get("battery") else None,
+            s.get("weight"),
+        ] if x)
+        pros = ", ".join(p.get("pros", [])[:2])
+        lines.append(
+            f"[{p['id']}] {p['name']} — {format_price(p['price'])} "
+            f"(⭐{p['rating']} | còn {p['stock']} cái)\n"
+            f"  {key_specs}\n"
+            f"  {p.get('highlight','')}\n"
+            f"  ✅ {pros}"
+        )
+    return "\n\n".join(lines)
