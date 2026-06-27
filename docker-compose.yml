@@ -16,7 +16,7 @@ services:
   chatbot:
     build: .
     ports:
-      - "${PORT:-8000}:8000"
+      - "${PORT:-8290}:8290"
     volumes:
       - ./data:/app/data
     env_file:
@@ -28,7 +28,7 @@ services:
         condition: service_healthy
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8290/health')"]
       interval: 30s
       timeout: 10s
       retries: 3
