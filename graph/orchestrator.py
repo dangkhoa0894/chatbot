@@ -5,6 +5,7 @@ from agents.intent_agent import intent_node
 from agents.search_agent import search_node
 from agents.closing_agent import closing_node, general_node
 from agents.guard import guard_node, oos_node
+from agents.escalation import escalation_node
 from services import session_store
 from services.streaming import setup_streaming, clear_streaming
 from services.context_manager import should_compress, compress_history
@@ -27,11 +28,19 @@ def _default_state(session_id: str) -> ChatState:
         oos_count=0,
         oos_type="",
         oos_domain="",
+        escalation_requested=False,
+        escalation_reason="",
+        stuck_count=0,
     )
 
 
 def _route_after_guard(state: ChatState) -> str:
-    return "oos" if state.get("intent") == "out_of_scope" else "intent"
+    intent = state.get("intent", "")
+    if intent == "escalation":
+        return "escalation"
+    if intent == "out_of_scope":
+        return "oos"
+    return "intent"
 
 
 def _route_after_intent(state: ChatState) -> str:
@@ -39,6 +48,8 @@ def _route_after_intent(state: ChatState) -> str:
     is_ready = state.get("is_ready_to_order", False)
     has_products = bool(state.get("recommended_products"))
 
+    if intent in ("escalation", "out_of_scope") and intent == "escalation":
+        return "escalation"
     if intent == "out_of_scope":
         return "oos"
     if intent in ("product_inquiry", "price_check"):
@@ -56,19 +67,22 @@ def _build_graph():
     g.add_node("closing", closing_node)
     g.add_node("general", general_node)
     g.add_node("oos", oos_node)
+    g.add_node("escalation", escalation_node)
     g.set_entry_point("guard")
     g.add_conditional_edges(
         "guard", _route_after_guard,
-        {"intent": "intent", "oos": "oos"},
+        {"intent": "intent", "oos": "oos", "escalation": "escalation"},
     )
     g.add_conditional_edges(
         "intent", _route_after_intent,
-        {"search": "search", "closing": "closing", "general": "general", "oos": "oos"},
+        {"search": "search", "closing": "closing", "general": "general",
+         "oos": "oos", "escalation": "escalation"},
     )
     g.add_edge("search", "closing")
     g.add_edge("closing", END)
     g.add_edge("general", END)
     g.add_edge("oos", END)
+    g.add_edge("escalation", END)
     return g.compile()
 
 
@@ -93,6 +107,12 @@ async def process_message(
         state["oos_type"] = ""
     if "oos_domain" not in state:
         state["oos_domain"] = ""
+    if "escalation_requested" not in state:
+        state["escalation_requested"] = False
+    if "escalation_reason" not in state:
+        state["escalation_reason"] = ""
+    if "stuck_count" not in state:
+        state["stuck_count"] = 0
 
     messages = list(state.get("messages", []))
     messages.append({"role": "user", "content": user_message})
@@ -114,6 +134,15 @@ async def process_message(
 
     response = result.get("response") or "Xin lỗi, tôi không hiểu. Bạn có thể nói lại không?"
     final_messages = messages + [{"role": "assistant", "content": response}]
+
+    # Update stuck_count: consecutive turns with same unresolved intent signal a loop.
+    _IGNORABLE = {"greeting", "general", "out_of_scope", "escalation", ""}
+    new_intent = result.get("intent", "general")
+    prev_intent = state.get("intent", "general")
+    if new_intent == prev_intent and new_intent not in _IGNORABLE:
+        result["stuck_count"] = state.get("stuck_count", 0) + 1
+    else:
+        result["stuck_count"] = 0
 
     # Save immediately so the client can send the next message without waiting
     # for compression. Compression runs as a best-effort background task.

@@ -168,6 +168,7 @@ canvas{display:block;width:100%;height:160px}
       <div class="nav-item" onclick="showTab('products')" id="nav-products">Sản phẩm</div>
       <div class="nav-item" onclick="showTab('logs')" id="nav-logs">Token Logs</div>
       <div class="nav-item" onclick="showTab('metrics')" id="nav-metrics">Metrics</div>
+      <div class="nav-item" onclick="showTab('escalations')" id="nav-escalations">Escalations</div>
       <div class="nav-item" onclick="showTab('config')" id="nav-config">Cấu hình</div>
     </nav>
     <div class="aside-footer">
@@ -379,6 +380,41 @@ canvas{display:block;width:100%;height:160px}
       </div>
     </div>
 
+    <!-- ── Escalations tab ── -->
+    <div id="tab-escalations" style="display:none;flex-direction:column;height:100%">
+      <div class="topbar">
+        <h2>Escalations — Yêu cầu hỗ trợ nhân viên</h2>
+        <div style="display:flex;gap:8px;align-items:center">
+          <select id="esc-filter" onchange="loadEscalations(0)" style="width:160px">
+            <option value="">Tất cả</option>
+            <option value="0">Chưa xử lý</option>
+            <option value="1">Đã xử lý</option>
+          </select>
+          <button class="btn btn-ghost" onclick="loadEscalations(0)">↻ Refresh</button>
+        </div>
+      </div>
+      <div style="padding:16px;flex:1;overflow:auto">
+        <div class="error-msg" id="esc-error"></div>
+        <div class="table-panel">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>#</th><th>Thời gian</th><th>Session</th>
+                <th>Lý do</th><th>Khách hàng</th><th>SĐT</th><th>Đơn hàng</th>
+                <th>Trạng thái</th><th>Thao tác</th>
+              </tr>
+            </thead>
+            <tbody id="esc-table-body"><tr><td colspan="9" class="loading">Loading…</td></tr></tbody>
+          </table>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;margin-top:12px;font-size:13px;color:var(--muted)">
+          <span id="esc-count">—</span>
+          <button class="btn btn-ghost btn-sm" id="esc-prev" onclick="changeEscPage(-1)" disabled>← Trước</button>
+          <button class="btn btn-ghost btn-sm" id="esc-next" onclick="changeEscPage(1)" disabled>Tiếp →</button>
+        </div>
+      </div>
+    </div>
+
     <!-- ── Metrics tab ── -->
     <div id="tab-metrics" style="display:none;flex-direction:column;height:100%">
       <div class="topbar">
@@ -444,17 +480,29 @@ canvas{display:block;width:100%;height:160px}
           </div>
         </div>
 
-        <!-- Row 3: OOS stats -->
-        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-bottom:16px">
+        <!-- Row 3: OOS + Escalation stats -->
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:16px">
           <div class="stat-card amber">
             <div class="stat-label">OOS Rate</div>
             <div class="stat-value" id="m-oos-rate">—</div>
             <div class="stat-sub" id="m-oos-turns">— lượt ngoài scope</div>
           </div>
-          <div class="stat-card red" style="--red-dim:rgba(239,68,68,.08)">
+          <div class="stat-card red">
             <div class="stat-label">Injection Attempts</div>
             <div class="stat-value" id="m-injections">—</div>
             <div class="stat-sub">Prompt injection phát hiện</div>
+          </div>
+          <div class="stat-card violet">
+            <div class="stat-label">Escalation Rate</div>
+            <div class="stat-value" id="m-esc-rate">—</div>
+            <div class="stat-sub" id="m-esc-count">— sessions chuyển nhân viên</div>
+          </div>
+          <div class="stat-card blue">
+            <div class="stat-label">Xem escalations</div>
+            <div class="stat-value" style="font-size:14px;margin-top:8px">
+              <button class="btn btn-ghost btn-sm" onclick="showTab('escalations')">Mở tab →</button>
+            </div>
+            <div class="stat-sub">Danh sách yêu cầu</div>
           </div>
         </div>
 
@@ -653,7 +701,7 @@ function auth() { return { Authorization: `Bearer ${TOKEN}` }; }
 
 // ── Tab navigation ────────────────────────────────────────────────────────────
 function showTab(name) {
-  ['dashboard','products','logs','config','metrics'].forEach(t => {
+  ['dashboard','products','logs','config','metrics','escalations'].forEach(t => {
     const el = document.getElementById(`tab-${t}`);
     el.style.display = t === name ? (t === 'dashboard' ? 'block' : 'flex') : 'none';
     document.getElementById(`nav-${t}`).classList.toggle('active', t === name);
@@ -662,6 +710,7 @@ function showTab(name) {
   if (name === 'logs') loadLogs(0);
   if (name === 'metrics') loadMetrics();
   if (name === 'config') loadConfig();
+  if (name === 'escalations') loadEscalations(0);
 }
 
 // ── Dashboard ─────────────────────────────────────────────────────────────────
@@ -1036,6 +1085,59 @@ window.addEventListener('resize', () => {
   if (document.getElementById('tab-metrics').style.display !== 'none') loadMetrics();
 });
 
+// ── Escalations ───────────────────────────────────────────────────────────────
+let escOffset = 0, escTotal = 0;
+const escLimit = 50;
+
+const _REASON_LABEL = {
+  explicit_request:  'Yêu cầu trực tiếp',
+  frustration:       'Bất mãn / khiếu nại',
+  conversation_loop: 'Vòng lặp hội thoại',
+  repeated_oos:      'OOS nhiều lần',
+};
+
+async function loadEscalations(offset = 0) {
+  escOffset = offset;
+  const filter = document.getElementById('esc-filter').value;
+  const qs = `limit=${escLimit}&offset=${offset}` + (filter !== '' ? `&resolved=${filter}` : '');
+  try {
+    const r = await fetch(`/admin/api/escalations?${qs}`, { headers: auth() });
+    if (!r.ok) { showError('esc-error', 'Lỗi tải escalations'); return; }
+    const d = await r.json();
+    escTotal = d.total;
+    renderEscalations(d.rows);
+    document.getElementById('esc-count').textContent = `${offset + 1}–${Math.min(offset + escLimit, escTotal)} / ${escTotal}`;
+    document.getElementById('esc-prev').disabled = offset === 0;
+    document.getElementById('esc-next').disabled = offset + escLimit >= escTotal;
+  } catch(e) { showError('esc-error', e.message); }
+}
+
+function renderEscalations(rows) {
+  const tbody = document.getElementById('esc-table-body');
+  if (!rows.length) {
+    tbody.innerHTML = '<tr><td colspan="9"><div class="empty-state"><p>Chưa có escalation nào</p></div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = rows.map(r => `<tr>
+    <td class="mono">${r.id}</td>
+    <td style="white-space:nowrap;font-size:12px">${r.ts.replace('T',' ').slice(0,16)}</td>
+    <td class="mono" style="font-size:11px;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(r.session_id)}">${r.session_id.slice(0,8)}…</td>
+    <td><span class="badge ${r.reason==='frustration'?'badge-red':r.reason==='explicit_request'?'badge-blue':'badge-slate'}">${_REASON_LABEL[r.reason]||r.reason}</span></td>
+    <td>${esc(r.customer_name)||'—'}</td>
+    <td class="mono">${esc(r.customer_phone)||'—'}</td>
+    <td class="mono">${esc(r.order_id)||'—'}</td>
+    <td><span class="badge ${r.resolved?'badge-green':'badge-amber'}">${r.resolved?'Đã xử lý':'Chờ xử lý'}</span></td>
+    <td>${r.resolved?'':`<button class="btn btn-ghost btn-sm" onclick="resolveEsc(${r.id})">Đánh dấu xong</button>`}</td>
+  </tr>`).join('');
+}
+
+async function resolveEsc(id) {
+  await fetch(`/admin/api/escalations/${id}/resolve`, { method:'PATCH', headers: auth() });
+  loadEscalations(escOffset);
+}
+
+function changeEscPage(dir) { loadEscalations(Math.max(0, escOffset + dir * escLimit)); }
+
 // ── Metrics ───────────────────────────────────────────────────────────────────
 async function loadMetrics() {
   const hours = document.getElementById('metrics-hours').value;
@@ -1059,6 +1161,8 @@ async function loadMetrics() {
     document.getElementById('m-oos-rate').textContent = (d.oos_rate ?? 0) + '%';
     document.getElementById('m-oos-turns').textContent = `${d.oos_turns ?? 0} lượt ngoài scope`;
     document.getElementById('m-injections').textContent = d.injection_attempts ?? 0;
+    document.getElementById('m-esc-rate').textContent = (d.escalation_rate ?? 0) + '%';
+    document.getElementById('m-esc-count').textContent = `${d.escalated_sessions ?? 0} sessions chuyển nhân viên`;
 
     renderIntentTable(d.intent_distribution, d.total_turns);
     renderSessionsChart(d.sessions_over_time, parseInt(hours));

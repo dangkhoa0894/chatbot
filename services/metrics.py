@@ -24,6 +24,8 @@ class SessionMetrics:
     end_time: float = 0.0
     oos_turns: int = 0             # out-of-scope messages this session
     injection_attempts: int = 0   # prompt injection attempts
+    escalated: bool = False        # whether session was escalated to human
+    escalation_reason: str = ""
 
 
 class MetricsStore:
@@ -84,6 +86,12 @@ class MetricsStore:
         if oos_type == "injection":
             s.injection_attempts += 1
 
+    def record_escalation(self, session_id: str, reason: str):
+        s = self._get_or_create(session_id)
+        if not s.escalated:
+            s.escalated = True
+            s.escalation_reason = reason
+
     # ── Aggregation ──────────────────────────────────────────────────────────
     def get_active_count(self) -> int:
         return sum(1 for s in self._sessions.values() if not s.ended)
@@ -121,6 +129,7 @@ class MetricsStore:
         all_intent = sum(s.fast_path_hits + s.intent_calls for s in sessions)
         total_oos = sum(s.oos_turns for s in sessions)
         total_injections = sum(s.injection_attempts for s in sessions)
+        total_escalated = sum(1 for s in sessions if s.escalated)
 
         intent_dist: dict[str, int] = defaultdict(int)
         for s in sessions:
@@ -148,6 +157,8 @@ class MetricsStore:
             "oos_turns": total_oos,
             "oos_rate": round(total_oos / max(total_turns, 1) * 100, 1),
             "injection_attempts": total_injections,
+            "escalated_sessions": total_escalated,
+            "escalation_rate": round(total_escalated / max(total, 1) * 100, 1),
         }
 
     def _get_or_create(self, session_id: str) -> SessionMetrics:

@@ -46,8 +46,22 @@ def init_db() -> None:
                 active    INTEGER DEFAULT 1
             );
 
-            CREATE INDEX IF NOT EXISTS idx_token_logs_ts    ON token_logs(ts);
-            CREATE INDEX IF NOT EXISTS idx_token_logs_agent ON token_logs(agent);
+            CREATE TABLE IF NOT EXISTS escalations (
+                id             INTEGER PRIMARY KEY AUTOINCREMENT,
+                ts             TEXT    NOT NULL,
+                session_id     TEXT    NOT NULL,
+                reason         TEXT    NOT NULL,
+                customer_name  TEXT    DEFAULT '',
+                customer_phone TEXT    DEFAULT '',
+                order_id       TEXT    DEFAULT '',
+                snapshot       TEXT    DEFAULT '[]',
+                resolved       INTEGER DEFAULT 0
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_token_logs_ts      ON token_logs(ts);
+            CREATE INDEX IF NOT EXISTS idx_token_logs_agent   ON token_logs(agent);
+            CREATE INDEX IF NOT EXISTS idx_escalations_ts     ON escalations(ts);
+            CREATE INDEX IF NOT EXISTS idx_escalations_reason ON escalations(reason);
         """)
 
 
@@ -161,6 +175,46 @@ def get_token_logs(
 def get_distinct_agents() -> list[str]:
     with _conn() as c:
         return [r[0] for r in c.execute("SELECT DISTINCT agent FROM token_logs").fetchall()]
+
+
+# ── Escalations ───────────────────────────────────────────────────────────────
+def log_escalation(
+    session_id: str,
+    reason: str,
+    customer_name: str = "",
+    customer_phone: str = "",
+    order_id: str = "",
+    snapshot: list | None = None,
+) -> None:
+    ts = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+    with _conn() as c:
+        c.execute(
+            "INSERT INTO escalations (ts, session_id, reason, customer_name, customer_phone, order_id, snapshot)"
+            " VALUES (?,?,?,?,?,?,?)",
+            (ts, session_id, reason, customer_name, customer_phone, order_id,
+             json.dumps(snapshot or [])),
+        )
+
+
+def get_escalations(limit: int = 50, offset: int = 0, resolved: int | None = None) -> dict:
+    conditions, params = [], []
+    if resolved is not None:
+        conditions.append("resolved = ?")
+        params.append(resolved)
+    where = ("WHERE " + " AND ".join(conditions)) if conditions else ""
+    with _conn() as c:
+        total = c.execute(f"SELECT COUNT(*) FROM escalations {where}", params).fetchone()[0]
+        rows = c.execute(
+            f"SELECT id,ts,session_id,reason,customer_name,customer_phone,order_id,resolved"
+            f" FROM escalations {where} ORDER BY id DESC LIMIT ? OFFSET ?",
+            params + [limit, offset],
+        ).fetchall()
+    return {"total": total, "rows": [dict(r) for r in rows]}
+
+
+def resolve_escalation(escalation_id: int) -> None:
+    with _conn() as c:
+        c.execute("UPDATE escalations SET resolved = 1 WHERE id = ?", (escalation_id,))
 
 
 # ── Product CRUD ───────────────────────────────────────────────────────────────

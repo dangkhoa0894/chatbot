@@ -1,20 +1,35 @@
 """
 Topic guard — runs BEFORE intent_node, no LLM call.
 
-Two detection layers:
-  1. Prompt injection signatures  → immediate block, separate metric
-  2. Off-topic domain patterns    → polite deflection, escalates with oos_count
-
-Design notes:
-- Patterns are deliberately conservative to avoid false positives.
-  A user saying "đầu tư một chiếc laptop tốt" should NOT trigger 'finance'.
-- oos_count persists in session state so deflection text escalates naturally.
-- After guard detects OOS it sets intent="out_of_scope"; the graph skips
-  intent_node entirely and routes directly to oos_node.
+Check order (first match wins):
+  1. Session already escalated  → route to escalation_node (show waiting msg)
+  2. Explicit escalation request ("nhân viên", "human"...)
+  3. Frustration / complaint keywords
+  4. Conversation loop (stuck_count >= 2)
+  5. Repeated OOS (oos_count >= 3)
+  6. Off-topic domain patterns  → oos_node
+  7. Prompt injection signatures → oos_node
+  8. Pass through to intent_node
 """
 import re
 from models.state import ChatState
 from services.metrics import metrics as _metrics
+
+# ── Escalation triggers ───────────────────────────────────────────────────────
+_EXPLICIT_ESCALATION_RE = re.compile(
+    r'nhân viên|người thật|con người thật|gặp trực tiếp|gọi điện cho tôi'
+    r'|hotline|quản lý|supervisor|human agent|\blive agent\b',
+    re.I,
+)
+
+_FRUSTRATION_RE = re.compile(
+    r'tức quá|bực quá|chán quá|thất vọng|lừa đảo|lừa tôi|tố cáo|báo cáo'
+    r'|sản phẩm lỗi|hàng lỗi|giao nhầm|không hoạt động|hỏng rồi'
+    r'|hoàn tiền ngay|trả hàng|đổi hàng|khiếu nại',
+    re.I,
+)
+
+_FRUSTRATION_PUNCT_RE = re.compile(r'[!?]{4,}')
 
 # ── Off-topic domain patterns ─────────────────────────────────────────────────
 # Keep patterns specific enough that tech-adjacent phrases don't trigger them.
@@ -67,10 +82,33 @@ def _detect(text: str) -> tuple[str, str] | None:
     return None
 
 
+def _escalation_reason(text: str, state: ChatState) -> str | None:
+    if state.get("escalation_requested"):
+        return "already_escalated"
+    if _EXPLICIT_ESCALATION_RE.search(text):
+        return "explicit_request"
+    if _FRUSTRATION_RE.search(text) or _FRUSTRATION_PUNCT_RE.search(text):
+        return "frustration"
+    if state.get("stuck_count", 0) >= 2:
+        return "conversation_loop"
+    return None
+
+
 def guard_node(state: ChatState) -> dict:
     msgs = state.get("messages", [])
     last = next((m["content"] for m in reversed(msgs) if m["role"] == "user"), "")
 
+    # ── Escalation check (highest priority) ──────────────────────────────────
+    reason = _escalation_reason(last, state)
+    if reason:
+        return {
+            **state,
+            "intent": "escalation",
+            "escalation_reason": reason,
+            "stage": "guard",
+        }
+
+    # ── OOS + injection check ─────────────────────────────────────────────────
     detected = _detect(last)
     if not detected:
         return state  # pass through to intent_node
@@ -78,6 +116,16 @@ def guard_node(state: ChatState) -> dict:
     oos_type, domain = detected
     oos_count = state.get("oos_count", 0) + 1
     _metrics.record_oos(state.get("session_id", ""), oos_type, domain)
+
+    # Escalate after 3 OOS turns instead of continuing to deflect
+    if oos_count >= 3:
+        return {
+            **state,
+            "intent": "escalation",
+            "escalation_reason": "repeated_oos",
+            "oos_count": oos_count,
+            "stage": "guard",
+        }
 
     return {
         **state,

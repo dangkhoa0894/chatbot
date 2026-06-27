@@ -17,3 +17,6 @@ class ChatState(TypedDict):
     oos_count: int                       # cumulative out-of-scope turns in this session
     oos_type: str                        # 'off_topic' | 'injection' | ''
     oos_domain: str                      # detected off-topic domain for analytics
+    escalation_requested: bool           # True once session has been escalated
+    escalation_reason: str               # why escalation was triggered
+    stuck_count: int                     # consecutive turns with same intent (loop detector)

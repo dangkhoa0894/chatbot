@@ -35,5 +35,9 @@ class Settings:
     RATE_LIMIT_REQUESTS: int = int(os.getenv("RATE_LIMIT_REQUESTS", "20"))
     RATE_LIMIT_WINDOW: int = int(os.getenv("RATE_LIMIT_WINDOW", "60"))
 
+    # Escalation — set to a webhook URL to receive real-time handoff events
+    # e.g. Slack incoming webhook, Freshdesk, Zalo OA webhook, etc.
+    ESCALATION_WEBHOOK_URL: str = os.getenv("ESCALATION_WEBHOOK_URL", "")
+
 
 settings = Settings()

@@ -7,6 +7,7 @@ from config import settings
 from db.database import (
     get_token_stats, get_token_logs, get_distinct_agents,
     load_all_products, upsert_product, delete_product,
+    get_escalations, resolve_escalation,
 )
 from services.product_service import reload_products
 from services import runtime_config as _rc
@@ -168,3 +169,22 @@ def remove_product(product_id: str, authorization: str = Header(None)):
     delete_product(product_id)
     reload_products()
     return {"id": product_id, "status": "deleted"}
+
+
+# ── Escalations ────────────────────────────────────────────────────────────────
+@router.get("/escalations")
+def list_escalations(
+    limit: int = Query(50, le=200),
+    offset: int = 0,
+    resolved: Optional[int] = None,
+    authorization: str = Header(None),
+):
+    _auth(authorization)
+    return get_escalations(limit=limit, offset=offset, resolved=resolved)
+
+
+@router.patch("/escalations/{escalation_id}/resolve")
+def mark_resolved(escalation_id: int, authorization: str = Header(None)):
+    _auth(authorization)
+    resolve_escalation(escalation_id)
+    return {"id": escalation_id, "status": "resolved"}
