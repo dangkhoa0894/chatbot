@@ -78,20 +78,26 @@ body {
 .session-label { font-size: 11px; color: var(--text-muted); font-family: monospace; }
 
 .icon-btn {
-  width: 32px; height: 32px;
+  width: 36px; height: 36px;
   display: flex; align-items: center; justify-content: center;
   background: transparent;
   border: 1px solid var(--border);
   color: var(--text-muted);
   border-radius: 8px; cursor: pointer;
   transition: background 0.15s, color 0.15s;
+  -webkit-tap-highlight-color: transparent;
 }
-.icon-btn:hover { background: var(--bg); color: var(--text); }
+@media (hover: hover) {
+  .icon-btn:hover { background: var(--bg); color: var(--text); }
+}
 
 /* ── Messages area ─────────────────────────────────────────────── */
 .chat-messages {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
   padding: 24px 20px;
   display: flex;
   flex-direction: column;
@@ -281,7 +287,7 @@ body {
 #msg-input::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
 
 #send-btn {
-  width: 32px; height: 32px;
+  width: 36px; height: 36px;
   background: var(--accent);
   color: white;
   border: none;
@@ -290,8 +296,11 @@ body {
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
   transition: background 0.15s, transform 0.1s, opacity 0.15s;
+  -webkit-tap-highlight-color: transparent;
 }
-#send-btn:hover { background: #6d28d9; }
+@media (hover: hover) {
+  #send-btn:hover { background: #6d28d9; }
+}
 #send-btn:active { transform: scale(0.92); }
 #send-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
 
@@ -381,11 +390,83 @@ body {
   50%       { opacity: 0.8; box-shadow: 0 0 0 3px rgba(34,197,94,0); }
 }
 
-/* ── Responsive ────────────────────────────────────────────────── */
+/* ── Responsive: tablet ────────────────────────────────────────── */
+@media (max-width: 800px) {
+  body { padding: 10px; align-items: flex-start; }
+  .chat-wrapper { height: calc(100dvh - 20px); max-height: none; }
+}
+
+/* ── Responsive: mobile ────────────────────────────────────────── */
 @media (max-width: 540px) {
-  body { padding: 0; }
-  .chat-wrapper { height: 100vh; height: 100dvh; border-radius: 0; border: none; }
-  .product-cards { grid-template-columns: 1fr 1fr; }
-  .message.user { max-width: 90%; }
-  .message.bot  { max-width: 95%; }
+  /* Full-bleed, no frame */
+  html { height: -webkit-fill-available; }
+  body {
+    padding: 0;
+    align-items: stretch;
+    min-height: 100vh;
+    min-height: -webkit-fill-available;
+  }
+  .chat-wrapper {
+    height: 100vh;
+    height: 100dvh;
+    max-height: none;
+    border-radius: 0;
+    border: none;
+    box-shadow: none;
+  }
+
+  /* Header: compact, hide session ID */
+  .chat-header { padding: 10px 14px; }
+  .bot-avatar { width: 32px; height: 32px; border-radius: 8px; }
+  .bot-name { font-size: 14px; }
+  .bot-status { font-size: 11px; }
+  .session-label { display: none; }
+  .icon-btn { width: 40px; height: 40px; }
+
+  /* Messages: tighter padding */
+  .chat-messages { padding: 14px 12px; gap: 4px; }
+
+  /* Bubbles: wider + larger font for readability */
+  .message.user { max-width: 88%; }
+  .message.bot  { max-width: 96%; }
+  .bubble { font-size: 15px; line-height: 1.55; padding: 10px 13px; }
+  .message.user .bubble { font-size: 15px; }
+
+  /* Avatar: slightly smaller */
+  .msg-avatar { width: 24px; height: 24px; border-radius: 6px; }
+
+  /* Input area: safe area bottom + 16px font prevents iOS auto-zoom */
+  .chat-input-area {
+    padding: 10px 12px;
+    padding-bottom: max(10px, env(safe-area-inset-bottom));
+  }
+  .input-box { padding: 8px 8px 8px 13px; border-radius: 12px; }
+  #msg-input { font-size: 16px; }  /* ≥16px prevents iOS Safari from zooming */
+  #send-btn { width: 40px; height: 40px; border-radius: 10px; }
+
+  /* Hide keyboard shortcut hint on mobile (irrelevant) */
+  .input-hint { display: none; }
+
+  /* Product cards: 2-col; fall to 1-col on very small screens */
+  .product-cards { grid-template-columns: 1fr 1fr; max-width: 100%; gap: 8px; }
+  .product-card { padding: 10px; }
+  .card-name { font-size: 12.5px; }
+
+  /* Order + CSAT: full width */
+  .order-card { max-width: 100%; }
+  .csat-widget { max-width: 100%; }
+  .csat-btn { padding: 12px 8px; font-size: 14px; }
+
+  /* Typing + streaming */
+  .typing-bubble { padding: 10px 12px; }
+
+  /* Turn spacing */
+  .message.user + .message.bot,
+  .message.bot + .message.user { margin-top: 8px; }
+}
+
+/* Very small phones (≤ 360px): single-column product cards */
+@media (max-width: 360px) {
+  .product-cards { grid-template-columns: 1fr; }
+  .message.user { max-width: 94%; }
 }
