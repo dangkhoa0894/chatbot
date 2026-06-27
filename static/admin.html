@@ -610,6 +610,7 @@ canvas{display:block;width:100%;height:160px}
               <div style="display:flex;gap:6px;align-items:center">
                 <button class="btn btn-green btn-sm" onclick="acceptMonitorSession()" id="btn-accept-session" style="display:none">▶ Nhận xử lý</button>
                 <button class="btn btn-ghost btn-sm" onclick="resolveMonitorSession()" id="btn-resolve-session" style="display:none">✓ Kết thúc</button>
+                <button class="btn btn-ghost btn-sm" onclick="acceptMonitorSession()" id="btn-initiate-session" style="display:none">💬 Tiếp cận</button>
               </div>
             </div>
             <div class="chat-pane-msgs" id="chat-pane-msgs">
@@ -1445,6 +1446,9 @@ async function loadLiveSessions() {
     if (countEl) countEl.textContent = `${_monitorSessions.length} phiên`;
 
     renderSessionList(_monitorSessions);
+
+    // Keep chat header in sync when session state changes via auto-refresh
+    if (_selectedSession) _updateChatHeader(_selectedSession);
   } catch(e) {}
 }
 
@@ -1504,15 +1508,22 @@ function _updateChatHeader(sessionId) {
   if (s?.customer_name) subParts.push(s.customer_name + (s.customer_phone ? ' · ' + s.customer_phone : ''));
   document.getElementById('chat-session-sub').textContent = subParts.join(' — ') || 'Đang hoạt động';
 
-  const acceptBtn = document.getElementById('btn-accept-session');
-  const resolveBtn = document.getElementById('btn-resolve-session');
-  if (acceptBtn) acceptBtn.style.display = (s?.escalated && !s?.admin_joined) ? '' : 'none';
-  if (resolveBtn) resolveBtn.style.display = s?.admin_joined ? '' : 'none';
+  const acceptBtn = document.getElementById('btn-accept-session');   // escalated & not joined
+  const initiateBtn = document.getElementById('btn-initiate-session'); // active & not escalated & not joined
+  const resolveBtn = document.getElementById('btn-resolve-session');   // admin has joined
 
-  // Disable input unless admin has joined
+  const notJoined = !s?.admin_joined;
+  if (acceptBtn)   acceptBtn.style.display   = (s?.escalated && notJoined) ? '' : 'none';
+  if (initiateBtn) initiateBtn.style.display = (!s?.escalated && notJoined && s) ? '' : 'none';
+  if (resolveBtn)  resolveBtn.style.display  = s?.admin_joined ? '' : 'none';
+
+  // Input enabled only when admin has joined
   const textarea = document.getElementById('admin-msg-input');
   const sendBtn = document.querySelector('.chat-pane-footer button');
-  if (textarea) textarea.disabled = !s?.admin_joined;
+  if (textarea) {
+    textarea.disabled = !s?.admin_joined;
+    textarea.placeholder = s?.admin_joined ? 'Nhắn tin với khách hàng…' : 'Nhấn "Nhận xử lý" hoặc "Tiếp cận" để bắt đầu nhắn tin';
+  }
   if (sendBtn) sendBtn.disabled = !s?.admin_joined;
 }
 
@@ -1554,38 +1565,78 @@ function renderChatHistory(history) {
   if (wasAtBottom) el.scrollTop = el.scrollHeight;
 }
 
+function _monitorToast(msg, isError) {
+  const t = document.createElement('div');
+  t.textContent = msg;
+  t.style.cssText = `position:fixed;bottom:24px;right:24px;padding:10px 16px;border-radius:8px;font-size:13px;font-weight:500;z-index:9999;color:#fff;background:${isError ? '#ef4444' : '#22c55e'};box-shadow:0 4px 12px rgba(0,0,0,.2);transition:opacity .3s`;
+  document.body.appendChild(t);
+  setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }, 2500);
+}
+
 async function sendAdminMessage() {
   const input = document.getElementById('admin-msg-input');
   const text = (input.value || '').trim();
   if (!text || !_selectedSession) return;
+  const savedText = input.value;
   input.value = '';
   input.style.height = 'auto';
   try {
-    await fetch(`/admin/api/sessions/${_selectedSession}/message`, {
+    const r = await fetch(`/admin/api/sessions/${_selectedSession}/message`, {
       method: 'POST',
       headers: { ...auth(), 'Content-Type': 'application/json' },
       body: JSON.stringify({ content: text }),
     });
+    if (!r.ok) {
+      input.value = savedText; // restore on failure
+      const err = await r.json().catch(() => ({}));
+      _monitorToast(`Lỗi gửi tin: ${err.detail || r.status}`, true);
+      return;
+    }
     await loadChatHistory(_selectedSession);
-  } catch(e) {}
+    input.focus();
+  } catch(e) {
+    input.value = savedText;
+    _monitorToast('Không thể gửi tin nhắn', true);
+  }
 }
 
 async function acceptMonitorSession() {
   if (!_selectedSession) return;
+  const btn = document.getElementById('btn-accept-session') || document.getElementById('btn-initiate-session');
+  if (btn) btn.disabled = true;
   try {
-    await fetch(`/admin/api/sessions/${_selectedSession}/accept`, { method: 'POST', headers: auth() });
+    const r = await fetch(`/admin/api/sessions/${_selectedSession}/accept`, { method: 'POST', headers: auth() });
+    if (!r.ok) {
+      const err = await r.json().catch(() => ({}));
+      _monitorToast(`Lỗi tiếp nhận: ${err.detail || r.status}`, true);
+      return;
+    }
     await loadLiveSessions();
     _updateChatHeader(_selectedSession);
-  } catch(e) {}
+    const textarea = document.getElementById('admin-msg-input');
+    if (textarea) textarea.focus();
+  } catch(e) {
+    _monitorToast('Không thể tiếp nhận phiên', true);
+  } finally {
+    if (btn) btn.disabled = false;
+  }
 }
 
 async function resolveMonitorSession() {
   if (!_selectedSession) return;
   try {
-    await fetch(`/admin/api/sessions/${_selectedSession}/resolve`, { method: 'POST', headers: auth() });
+    const r = await fetch(`/admin/api/sessions/${_selectedSession}/resolve`, { method: 'POST', headers: auth() });
+    if (!r.ok) {
+      const err = await r.json().catch(() => ({}));
+      _monitorToast(`Lỗi kết thúc: ${err.detail || r.status}`, true);
+      return;
+    }
     await loadLiveSessions();
     _updateChatHeader(_selectedSession);
-  } catch(e) {}
+    _monitorToast('Đã kết thúc phiên hỗ trợ', false);
+  } catch(e) {
+    _monitorToast('Không thể kết thúc phiên', true);
+  }
 }
 
 function startMonitor() {
