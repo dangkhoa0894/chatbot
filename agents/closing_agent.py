@@ -3,6 +3,7 @@ from models.state import ChatState
 from services.product_service import format_price, format_products_compact
 from services.llm_client import chat
 from services.context_manager import build_messages
+from services import runtime_config as _rc
 
 _SYSTEM = """Bạn là chuyên gia tư vấn & chốt sale của TechShop AI (laptop, điện thoại, máy tính bảng).
 
@@ -105,7 +106,7 @@ def closing_node(state: ChatState) -> dict:
     try:
         response = chat(
             messages=build_messages(state, _SYSTEM, extra_system=situation_block),
-            max_tokens=800,
+            max_tokens=_rc.get_max_tokens("closing"),
             agent="closing",
             session_id=state.get("session_id", ""),
             stream=True,
@@ -134,7 +135,7 @@ def general_node(state: ChatState) -> dict:
     try:
         response = chat(
             messages=build_messages(state, _GENERAL_SYSTEM),
-            max_tokens=500,
+            max_tokens=_rc.get_max_tokens("general"),
             agent="general",
             session_id=state.get("session_id", ""),
             stream=True,

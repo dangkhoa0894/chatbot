@@ -4,6 +4,7 @@ from models.state import ChatState
 from services.llm_client import chat
 from services.context_manager import build_messages
 from services.metrics import metrics as _metrics
+from services import runtime_config as _rc
 
 # ── Fast-path keyword rules (no LLM call needed) ───────────────────────────────
 _GREETING_TRIGGERS = {'xin chào', 'chào', 'hi', 'hello', 'hey', 'alo', 'xin chao', 'chao', 'helo'}
@@ -176,7 +177,7 @@ def intent_node(state: ChatState) -> dict:
     try:
         raw = chat(
             messages=llm_msgs,
-            max_tokens=400,
+            max_tokens=_rc.get_max_tokens("intent"),
             agent="intent",
             session_id=state.get("session_id", ""),
         )

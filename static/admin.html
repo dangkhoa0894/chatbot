@@ -176,6 +176,9 @@ canvas{display:block;width:100%;height:160px}
       <div class="nav-item" onclick="showTab('metrics')" id="nav-metrics">
         <span class="icon">📈</span><span>Metrics</span>
       </div>
+      <div class="nav-item" onclick="showTab('config')" id="nav-config">
+        <span class="icon">⚙️</span><span>Cấu hình</span>
+      </div>
     </nav>
     <div class="aside-footer">
       <div class="model-badge" id="model-label">Loading…</div>
@@ -317,6 +320,75 @@ canvas{display:block;width:100%;height:160px}
         </div>
       </div>
     </div>
+    <!-- ── Config tab ── -->
+    <div id="tab-config" style="display:none;flex-direction:column;height:100%">
+      <div class="topbar">
+        <h2>Cấu hình hệ thống</h2>
+        <div class="actions">
+          <button class="btn btn-ghost" onclick="loadConfig()">↻ Refresh</button>
+        </div>
+      </div>
+      <div class="content-area">
+        <div class="error-msg" id="config-error"></div>
+        <div id="config-success" style="background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.25);color:#4ade80;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:14px;display:none"></div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+
+          <!-- Context Management -->
+          <div class="table-panel">
+            <div class="table-panel-header"><h3>🔄 Quản lý ngữ cảnh hội thoại</h3></div>
+            <div style="padding:16px;display:flex;flex-direction:column;gap:14px">
+              <div class="form-group">
+                <label>Window size <span style="color:var(--muted);font-weight:400;text-transform:none">(messages verbatim)</span></label>
+                <input type="number" id="cfg-window" min="2" max="20" step="2"
+                  style="padding:9px 12px;background:var(--panel);border:1.5px solid var(--border);border-radius:7px;color:var(--text);font-size:13px;outline:none;width:100%;transition:border-color .15s"
+                  onfocus="this.style.borderColor='var(--blue)'" onblur="this.style.borderColor='var(--border)'">
+                <div class="form-hint">Số messages gần nhất gửi nguyên vẹn vào LLM mỗi lượt</div>
+              </div>
+              <div class="form-group">
+                <label>Compress threshold <span style="color:var(--muted);font-weight:400;text-transform:none">(messages)</span></label>
+                <input type="number" id="cfg-compress-at" min="6" max="60" step="2"
+                  style="padding:9px 12px;background:var(--panel);border:1.5px solid var(--border);border-radius:7px;color:var(--text);font-size:13px;outline:none;width:100%;transition:border-color .15s"
+                  onfocus="this.style.borderColor='var(--blue)'" onblur="this.style.borderColor='var(--border)'">
+                <div class="form-hint">Kích hoạt tóm tắt khi lịch sử vượt N messages</div>
+              </div>
+              <div class="form-group">
+                <label>Max summary input <span style="color:var(--muted);font-weight:400;text-transform:none">(chars)</span></label>
+                <input type="number" id="cfg-max-summary" min="200" max="2000" step="100"
+                  style="padding:9px 12px;background:var(--panel);border:1.5px solid var(--border);border-radius:7px;color:var(--text);font-size:13px;outline:none;width:100%;transition:border-color .15s"
+                  onfocus="this.style.borderColor='var(--blue)'" onblur="this.style.borderColor='var(--border)'">
+                <div class="form-hint">Giới hạn độ dài tóm tắt cũ đưa vào prompt (ngăn input phình)</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- LLM Config -->
+          <div class="table-panel">
+            <div class="table-panel-header"><h3>🤖 LLM Configuration</h3></div>
+            <div style="padding:0">
+              <table class="data-table" style="width:100%">
+                <thead>
+                  <tr>
+                    <th style="width:100px">Agent</th>
+                    <th>Model ID</th>
+                    <th style="width:96px">Max Tokens</th>
+                  </tr>
+                </thead>
+                <tbody id="llm-config-body">
+                  <tr><td colspan="3" class="loading">Loading…</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:14px">
+          <button class="btn btn-blue" onclick="saveConfig()">💾 Lưu cấu hình</button>
+          <span style="font-size:12px;color:var(--muted)">Hiệu lực ngay lập tức · Reset về mặc định khi khởi động lại server</span>
+        </div>
+      </div>
+    </div>
+
     <!-- ── Metrics tab ── -->
     <div id="tab-metrics" style="display:none;flex-direction:column;height:100%">
       <div class="topbar">
@@ -577,7 +649,7 @@ function auth() { return { Authorization: `Bearer ${TOKEN}` }; }
 
 // ── Tab navigation ────────────────────────────────────────────────────────────
 function showTab(name) {
-  ['dashboard','products','logs','metrics'].forEach(t => {
+  ['dashboard','products','logs','config','metrics'].forEach(t => {
     const el = document.getElementById(`tab-${t}`);
     el.style.display = t === name ? (t === 'dashboard' ? 'block' : 'flex') : 'none';
     document.getElementById(`nav-${t}`).classList.toggle('active', t === name);
@@ -585,6 +657,7 @@ function showTab(name) {
   if (name === 'products') loadProducts();
   if (name === 'logs') loadLogs(0);
   if (name === 'metrics') loadMetrics();
+  if (name === 'config') loadConfig();
 }
 
 // ── Dashboard ─────────────────────────────────────────────────────────────────
@@ -872,6 +945,87 @@ function fmtK(n) { return n >= 1000 ? (n/1000).toFixed(1)+'K' : String(Math.roun
 function fmtPrice(p) { return p.toLocaleString('vi-VN') + 'đ'; }
 function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function showError(id, msg) { const el = document.getElementById(id); if (el) { el.textContent = msg; el.style.display = msg ? 'block' : 'none'; } }
+
+// ── Config ────────────────────────────────────────────────────────────────────
+const CFG_AGENTS = ['intent', 'closing', 'general', 'summarizer'];
+const cfgAgentLabel = { intent:'Intent', closing:'Closing', general:'General', summarizer:'Summarizer' };
+const cfgAgentBadge = { intent:'badge-blue', closing:'badge-violet', general:'badge-amber', summarizer:'badge-slate' };
+
+async function loadConfig() {
+  showError('config-error', '');
+  try {
+    const r = await fetch('/admin/api/config', { headers: auth() });
+    if (!r.ok) throw new Error(await r.text());
+    const d = await r.json();
+    document.getElementById('cfg-window').value       = d.context.window;
+    document.getElementById('cfg-compress-at').value  = d.context.compress_at;
+    document.getElementById('cfg-max-summary').value  = d.context.max_summary_chars;
+    renderLLMConfigTable(d.llm);
+  } catch(e) {
+    showError('config-error', e.message);
+  }
+}
+
+function renderLLMConfigTable(llm) {
+  const inp = (id, val, extra='') =>
+    `<input type="text" id="${id}" value="${esc(val)}" ${extra}
+      style="width:100%;padding:5px 8px;background:var(--bg);border:1px solid var(--border);
+             border-radius:5px;color:var(--text);font-family:var(--mono);font-size:11px;outline:none"
+      onfocus="this.style.borderColor='var(--blue)'" onblur="this.style.borderColor='var(--border)'">`;
+  const num = (id, val) =>
+    `<input type="number" id="${id}" value="${val}" min="50" max="8192" step="50"
+      style="width:80px;padding:5px 8px;background:var(--bg);border:1px solid var(--border);
+             border-radius:5px;color:var(--text);font-size:12px;outline:none;text-align:right"
+      onfocus="this.style.borderColor='var(--blue)'" onblur="this.style.borderColor='var(--border)'">`;
+  document.getElementById('llm-config-body').innerHTML = CFG_AGENTS.map(a => `
+    <tr>
+      <td><span class="badge ${cfgAgentBadge[a]}">${cfgAgentLabel[a]}</span></td>
+      <td style="padding-right:12px">${inp(`llm-model-${a}`, llm.models[a] || '')}</td>
+      <td>${num(`llm-tokens-${a}`, llm.max_tokens[a] || 400)}</td>
+    </tr>`).join('');
+}
+
+async function saveConfig() {
+  showError('config-error', '');
+  document.getElementById('config-success').style.display = 'none';
+
+  const models = {}, maxTokens = {};
+  CFG_AGENTS.forEach(a => {
+    const m = (document.getElementById(`llm-model-${a}`)?.value || '').trim();
+    if (m) models[a] = m;
+    const t = parseInt(document.getElementById(`llm-tokens-${a}`)?.value);
+    if (!isNaN(t)) maxTokens[a] = t;
+  });
+
+  const payload = {
+    context: {
+      window:           parseInt(document.getElementById('cfg-window').value),
+      compress_at:      parseInt(document.getElementById('cfg-compress-at').value),
+      max_summary_chars: parseInt(document.getElementById('cfg-max-summary').value),
+    },
+    llm: { models, max_tokens: maxTokens },
+  };
+
+  try {
+    const r = await fetch('/admin/api/config', {
+      method: 'PATCH',
+      headers: { ...auth(), 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!r.ok) throw new Error(await r.text());
+    const d = await r.json();
+    renderLLMConfigTable(d.llm);
+    document.getElementById('cfg-window').value      = d.context.window;
+    document.getElementById('cfg-compress-at').value = d.context.compress_at;
+    document.getElementById('cfg-max-summary').value = d.context.max_summary_chars;
+    const el = document.getElementById('config-success');
+    el.textContent = '✅ Đã lưu — thay đổi có hiệu lực ngay lập tức';
+    el.style.display = 'block';
+    setTimeout(() => el.style.display = 'none', 3500);
+  } catch(e) {
+    showError('config-error', e.message);
+  }
+}
 
 // Resize chart on window resize
 window.addEventListener('resize', () => {

@@ -2,13 +2,14 @@ import uuid
 from fastapi import APIRouter, HTTPException, Header, Query
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-from typing import Optional, Any
+from typing import Optional, Any, Dict
 from config import settings
 from db.database import (
     get_token_stats, get_token_logs, get_distinct_agents,
     load_all_products, upsert_product, delete_product,
 )
 from services.product_service import reload_products
+from services import runtime_config as _rc
 
 router = APIRouter(prefix="/admin/api")
 
@@ -70,6 +71,50 @@ def get_metrics(hours: int = Query(24, le=168), authorization: str = Header(None
     _auth(authorization)
     from services.metrics import metrics
     return metrics.summary(hours)
+
+
+# ── Runtime Config ─────────────────────────────────────────────────────────────
+class ContextConfigPayload(BaseModel):
+    window: Optional[int] = None
+    compress_at: Optional[int] = None
+    max_summary_chars: Optional[int] = None
+
+
+class LLMModelsPayload(BaseModel):
+    intent: Optional[str] = None
+    closing: Optional[str] = None
+    general: Optional[str] = None
+    summarizer: Optional[str] = None
+
+
+class LLMTokensPayload(BaseModel):
+    intent: Optional[int] = None
+    closing: Optional[int] = None
+    general: Optional[int] = None
+    summarizer: Optional[int] = None
+
+
+class LLMConfigPayload(BaseModel):
+    models: Optional[LLMModelsPayload] = None
+    max_tokens: Optional[LLMTokensPayload] = None
+
+
+class ConfigPayload(BaseModel):
+    context: Optional[ContextConfigPayload] = None
+    llm: Optional[LLMConfigPayload] = None
+
+
+@router.get("/config")
+def get_config(authorization: str = Header(None)):
+    _auth(authorization)
+    return _rc.get_all()
+
+
+@router.patch("/config")
+def patch_config(payload: ConfigPayload, authorization: str = Header(None)):
+    _auth(authorization)
+    _rc.update(payload.model_dump(exclude_none=True))
+    return _rc.get_all()
 
 
 # ── Products ───────────────────────────────────────────────────────────────────

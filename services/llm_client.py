@@ -22,7 +22,8 @@ def _get_client() -> OpenAI:
 def _resolve_model(agent: str, model: str | None) -> str:
     if model:
         return model
-    return settings.AGENT_MODELS.get(agent, settings.MODEL)
+    from services import runtime_config as _rc
+    return _rc.get_model(agent)
 
 
 def chat(

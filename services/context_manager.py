@@ -6,13 +6,11 @@ Three-layer architecture:
   2. Rolling summary   — LLM-compressed summary of older turns (triggered at COMPRESS_AT)
   3. Entity memory     — structured facts (budget, category, etc.) that persist across all turns
 
-This replaces ad-hoc messages[-4:] slicing scattered across agents with a single,
-consistent interface used by every agent that calls an LLM.
+All tunable parameters (window, compress_at, max_summary_chars) are read live
+from services.runtime_config so they can be changed via the admin panel without
+a server restart.
 """
-
-WINDOW = 8           # recent messages kept verbatim
-COMPRESS_AT = 14     # trigger rolling compression above this count
-_MAX_SUMMARY_CHARS = 600  # cap on existing_summary fed back into the summarizer
+from services import runtime_config as _rc
 
 _SUMMARY_SYSTEM = (
     "Bạn là AI tóm tắt hội thoại bán hàng điện tử. "
@@ -26,7 +24,7 @@ _SUMMARY_SYSTEM = (
 
 
 def should_compress(messages: list) -> bool:
-    return len(messages) > COMPRESS_AT
+    return len(messages) > _rc.get_ctx("compress_at")
 
 
 def compress_history(messages: list, existing_summary: str = "") -> tuple[str, list]:
@@ -35,23 +33,24 @@ def compress_history(messages: list, existing_summary: str = "") -> tuple[str, l
     Returns (new_summary, trimmed_messages_list).
     Called from orchestrator via run_in_executor (sync-safe).
     On LLM failure: returns (existing_summary, original_messages) unchanged.
-    existing_summary is capped at _MAX_SUMMARY_CHARS before being fed back
-    into the prompt to prevent unbounded growth across many compression cycles.
+    existing_summary is capped at runtime max_summary_chars to prevent
+    unbounded input growth across many compression cycles.
     """
     from services.llm_client import chat
 
-    to_summarize = messages[:-WINDOW]
-    keep = messages[-WINDOW:]
+    window = _rc.get_ctx("window")
+    max_summary = _rc.get_ctx("max_summary_chars")
+
+    to_summarize = messages[:-window]
+    keep = messages[-window:]
 
     history_text = "\n".join(
         f"{'Khách' if m['role'] == 'user' else 'Bot'}: {m['content']}"
         for m in to_summarize
     )
 
-    # Truncate existing summary to prevent unbounded input growth across many
-    # compression cycles — each cycle appends ~200 chars to the next input.
     summary_excerpt = (
-        existing_summary[-_MAX_SUMMARY_CHARS:] if len(existing_summary) > _MAX_SUMMARY_CHARS
+        existing_summary[-max_summary:] if len(existing_summary) > max_summary
         else existing_summary
     )
     prefix = f"[Tóm tắt trước đó]:\n{summary_excerpt}\n\n" if summary_excerpt else ""
@@ -62,7 +61,7 @@ def compress_history(messages: list, existing_summary: str = "") -> tuple[str, l
                 {"role": "system", "content": _SUMMARY_SYSTEM},
                 {"role": "user", "content": f"{prefix}[Hội thoại cần tóm tắt]:\n{history_text}"},
             ],
-            max_tokens=200,
+            max_tokens=_rc.get_max_tokens("summarizer"),
             agent="summarizer",
             stream=False,
         )
@@ -107,7 +106,7 @@ def build_messages(state: dict, system_prompt: str, *, extra_system: str = "") -
     result: list[dict] = [{"role": "system", "content": "\n".join(system_parts)}]
 
     # ── Append recent turns in native multi-turn format ───────────────────────
-    for msg in messages[-WINDOW:]:
+    for msg in messages[-_rc.get_ctx("window"):]:
         role = msg["role"]          # "user" or "assistant"
         result.append({"role": role, "content": msg["content"]})
 
