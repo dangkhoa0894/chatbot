@@ -118,6 +118,7 @@ def closing_node(state: ChatState) -> dict:
             max_tokens=800,
             agent="closing",
             session_id=state.get("session_id", ""),
+            stream=True,
         )
     except Exception as exc:
         response = f"Xin lỗi, có lỗi xảy ra. Vui lòng thử lại. ({exc})"
@@ -154,6 +155,7 @@ def general_node(state: ChatState) -> dict:
             max_tokens=500,
             agent="general",
             session_id=state.get("session_id", ""),
+            stream=True,
         )
     except Exception:
         response = (

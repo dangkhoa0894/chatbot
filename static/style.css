@@ -299,6 +299,18 @@ body {
 .conn-banner.connecting { background: #fef9c3; color: #854d0e; }
 .conn-banner.disconnected { background: #fee2e2; color: #991b1b; }
 
+/* ── Streaming cursor ───────────────────────────────────── */
+.stream-cursor {
+  display: inline-block;
+  color: var(--primary);
+  font-weight: 700;
+  animation: blink 0.75s step-end infinite;
+  margin-left: 1px;
+}
+@keyframes blink {
+  50% { opacity: 0; }
+}
+
 /* ── Responsive ─────────────────────────────────────────── */
 @media (max-width: 520px) {
   body { padding: 0; }

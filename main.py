@@ -10,15 +10,18 @@ from admin.routes import router as admin_router
 from services.product_service import PRODUCTS_DB, search_products, format_price, reload_products
 from graph.orchestrator import get_session_state, clear_session
 from db.database import init_db, seed_products_if_empty
+from services.rate_limiter import rate_limiter
 from config import settings
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Initialise SQLite and seed products on first run
     init_db()
     seed_products_if_empty(PRODUCTS_DB)
     reload_products()
+    # Apply rate limit settings from config
+    rate_limiter.max_requests = settings.RATE_LIMIT_REQUESTS
+    rate_limiter.window = settings.RATE_LIMIT_WINDOW
     if settings.ADMIN_TOKEN == "admin123":
         print("⚠️  ADMIN_TOKEN is default 'admin123'. Set ADMIN_TOKEN in .env for production.")
     yield
@@ -27,7 +30,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="TechShop AI Chatbot",
     description="Multi-agent e-commerce chatbot — laptop, phone, tablet",
-    version="2.0.0",
+    version="3.0.0",
     lifespan=lifespan,
 )
 
@@ -79,11 +82,11 @@ async def get_product(product_id: str):
 # ── Session ────────────────────────────────────────────────────────────────────
 @app.get("/api/session/{session_id}", tags=["Session"])
 async def session_state(session_id: str):
-    return get_session_state(session_id)
+    return await get_session_state(session_id)
 
 @app.delete("/api/session/{session_id}", tags=["Session"])
 async def end_session(session_id: str):
-    clear_session(session_id)
+    await clear_session(session_id)
     return {"status": "cleared"}
 
 
@@ -96,6 +99,7 @@ async def health():
         "model": settings.MODEL,
         "products": len(get_live_products()),
         "fb_configured": bool(settings.FB_PAGE_ACCESS_TOKEN),
+        "redis": bool(settings.REDIS_URL),
     }
 
 

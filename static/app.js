@@ -60,14 +60,18 @@
         if (data.is_typing) showTyping(); else hideTyping();
         break;
 
+      case 'token':
+        handleStreamToken(data.delta);
+        break;
+
       case 'message':
-        hideTyping();
+        finalizeStream(data.content, data.metadata);
         setSendEnabled(true);
-        appendBotMessage(data.content, data.metadata);
         break;
 
       case 'error':
         hideTyping();
+        clearStream();
         setSendEnabled(true);
         appendBotMessage(`⚠️ ${data.content}`);
         break;
@@ -165,10 +169,9 @@
   let typingEl = null;
 
   function showTyping() {
-    if (typingEl) return;
+    if (typingEl || streamingWrap) return;
     typingEl = document.createElement('div');
     typingEl.className = 'message bot';
-    typingEl.id = 'typing-indicator';
     typingEl.innerHTML = `
       <div class="msg-avatar">🤖</div>
       <div class="typing-bubble">
@@ -182,6 +185,44 @@
 
   function hideTyping() {
     if (typingEl) { typingEl.remove(); typingEl = null; }
+  }
+
+  // ── Streaming ──────────────────────────────────────────────────────────────
+  let streamingWrap = null;
+  let streamingContent = null;
+  let streamingText = '';
+
+  function handleStreamToken(delta) {
+    hideTyping();
+    if (!streamingWrap) {
+      streamingWrap = document.createElement('div');
+      streamingWrap.style.cssText = 'display:flex;flex-direction:column;gap:8px;align-self:flex-start;animation:fadeIn 0.25s ease';
+      const el = document.createElement('div');
+      el.className = 'message bot';
+      el.innerHTML = '<div class="msg-avatar">🤖</div><div class="bubble"><span class="stream-text"></span><span class="stream-cursor">▍</span></div>';
+      streamingWrap.appendChild(el);
+      messagesEl.appendChild(streamingWrap);
+      streamingContent = el.querySelector('.stream-text');
+    }
+    streamingText += delta;
+    streamingContent.innerHTML = formatText(streamingText);
+    scrollBottom();
+  }
+
+  function finalizeStream(fullText, meta) {
+    if (streamingWrap) {
+      streamingWrap.remove();
+      streamingWrap = null; streamingContent = null; streamingText = '';
+    }
+    hideTyping();
+    appendBotMessage(fullText, meta);
+  }
+
+  function clearStream() {
+    if (streamingWrap) {
+      streamingWrap.remove();
+      streamingWrap = null; streamingContent = null; streamingText = '';
+    }
   }
 
   // ── Session clear ──────────────────────────────────────────────────────────
