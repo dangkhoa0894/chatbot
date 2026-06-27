@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>TechShop AI — Admin</title>
 <style>
 :root{
@@ -138,7 +138,98 @@ canvas{display:block;width:100%;height:160px}
 .loading{text-align:center;padding:32px;color:var(--muted);font-size:13px}
 .error-msg{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);color:#f87171;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:14px;display:none}
 
-@media(max-width:700px){aside{width:160px}.aside-brand span,.aside-footer{display:none}}
+/* ── Grid helpers ── */
+.grid-2col{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid-3col{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.grid-4col{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.mb-16{margin-bottom:16px}.mb-20{margin-bottom:20px}
+
+/* ── Mobile header (hamburger + tab title) ── */
+.mobile-header{
+  display:none;align-items:center;gap:12px;
+  padding:12px 16px;border-bottom:1px solid var(--border);
+  background:var(--surface);flex-shrink:0;
+}
+.mobile-header .tab-title{font-size:15px;font-weight:700;flex:1}
+.hamburger-btn{
+  width:38px;height:38px;display:flex;align-items:center;justify-content:center;
+  background:transparent;border:1px solid var(--border);
+  color:var(--text);border-radius:8px;cursor:pointer;font-size:18px;line-height:1;
+  flex-shrink:0;
+}
+.nav-overlay{
+  display:none;position:fixed;inset:0;
+  background:rgba(0,0,0,.55);z-index:150;
+  -webkit-tap-highlight-color:transparent;
+}
+.nav-overlay.show{display:block}
+
+/* ── Tablet (≤900px): slim sidebar ── */
+@media(max-width:900px){
+  aside{width:180px}
+  .aside-brand span{font-size:13px}
+  .content-area{padding:18px}
+}
+
+/* ── Mobile (≤680px): drawer sidebar ── */
+@media(max-width:680px){
+  html{height:-webkit-fill-available}
+  body{min-height:-webkit-fill-available}
+
+  aside{
+    position:fixed;top:0;bottom:0;left:0;
+    width:250px;z-index:200;
+    transform:translateX(-100%);
+    transition:transform .25s ease;
+    box-shadow:4px 0 24px rgba(0,0,0,.4);
+    display:flex!important;
+  }
+  aside.open{transform:translateX(0)}
+
+  #admin-app{flex-direction:column}
+  .main-content{width:100%;height:100vh;height:100dvh;overflow:hidden}
+
+  /* Show mobile header, hide in-tab topbar h2 */
+  .mobile-header{display:flex}
+  .topbar h2{display:none}
+  .topbar{padding:10px 14px}
+  .topbar .actions select,.topbar .actions button{font-size:12px}
+
+  /* Content padding */
+  .content-area{
+    padding:12px;
+    padding-bottom:max(12px, env(safe-area-inset-bottom));
+  }
+
+  /* Stat cards: 2-col */
+  .stat-grid{grid-template-columns:1fr 1fr;gap:10px}
+
+  /* All inline grids: single column */
+  .grid-2col,.grid-3col,.grid-4col{grid-template-columns:1fr}
+
+  /* Filters: wrap tightly */
+  .filters{gap:8px}
+  .filters select,.filters input{font-size:13px}
+  #search-filter{width:100%!important}
+
+  /* Modal: bottom sheet */
+  .modal-overlay{padding:0;align-items:flex-end}
+  .modal{border-radius:16px 16px 0 0;max-height:92vh;max-width:100%}
+  .modal-body{padding:16px}
+  .modal-header{padding:14px 16px}
+  .modal-footer{padding:12px 16px;padding-bottom:max(12px,env(safe-area-inset-bottom))}
+  .form-row{grid-template-columns:1fr}
+
+  /* Login */
+  .login-card{padding:28px 20px;border-radius:0;min-height:100vh;display:flex;flex-direction:column;justify-content:center;max-width:100%}
+  #login-screen{padding:0}
+}
+
+/* ── Small phones (≤400px): 1-col stat cards ── */
+@media(max-width:400px){
+  .stat-grid{grid-template-columns:1fr}
+  .stat-value{font-size:22px}
+}
 </style>
 </head>
 <body>
@@ -158,7 +249,9 @@ canvas{display:block;width:100%;height:160px}
 
 <!-- ── Main App ───────────────────────────────────────────────────────────────── -->
 <div id="admin-app">
-  <aside>
+  <div class="nav-overlay" id="nav-overlay" onclick="closeSidebar()"></div>
+
+  <aside id="sidebar">
     <div class="aside-brand">
       <div class="logo">TS</div>
       <span>TechShop AI</span>
@@ -170,7 +263,6 @@ canvas{display:block;width:100%;height:160px}
       <div class="nav-item" onclick="showTab('metrics')" id="nav-metrics">Metrics</div>
       <div class="nav-item" onclick="showTab('escalations')" id="nav-escalations">Escalations</div>
       <div class="nav-item" onclick="showTab('config')" id="nav-config">Cấu hình</div>
-      <button onclick="logout()" style="margin-left:auto;background:none;border:1px solid #e74c3c;color:#e74c3c;padding:4px 14px;border-radius:4px;cursor:pointer;font-size:12px;">Đăng xuất</button>
     </nav>
     <div class="aside-footer">
       <div class="model-badge" id="model-label">Loading…</div>
@@ -179,6 +271,10 @@ canvas{display:block;width:100%;height:160px}
   </aside>
 
   <div class="main-content">
+    <div class="mobile-header">
+      <button class="hamburger-btn" onclick="toggleSidebar()" aria-label="Menu">&#9776;</button>
+      <span class="tab-title" id="mobile-tab-title">Dashboard</span>
+    </div>
     <!-- ── Dashboard tab ── -->
     <div id="tab-dashboard">
       <div class="topbar">
@@ -212,7 +308,7 @@ canvas{display:block;width:100%;height:160px}
           <canvas id="usage-chart" height="160"></canvas>
         </div>
 
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div class="grid-2col">
           <div class="table-panel">
             <div class="table-panel-header"><h3>Theo Agent</h3></div>
             <div class="overflow-wrap">
@@ -324,7 +420,7 @@ canvas{display:block;width:100%;height:160px}
         <div class="error-msg" id="config-error"></div>
         <div id="config-success" style="background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.25);color:#4ade80;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:14px;display:none"></div>
 
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+        <div class="grid-2col mb-16">
 
           <!-- Context Management -->
           <div class="table-panel">
@@ -482,7 +578,7 @@ canvas{display:block;width:100%;height:160px}
         </div>
 
         <!-- Row 3: OOS + Escalation stats -->
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:16px">
+        <div class="grid-4col mb-16">
           <div class="stat-card amber">
             <div class="stat-label">OOS Rate</div>
             <div class="stat-value" id="m-oos-rate">—</div>
@@ -508,7 +604,7 @@ canvas{display:block;width:100%;height:160px}
         </div>
 
         <!-- CSAT stats -->
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:16px">
+        <div class="grid-3col mb-16">
           <div class="stat-card green">
             <div class="stat-label">CSAT Score</div>
             <div class="stat-value" id="m-csat-avg">—</div>
@@ -527,7 +623,7 @@ canvas{display:block;width:100%;height:160px}
         </div>
 
         <!-- Row 4: Intent distribution + Sessions sparkline -->
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div class="grid-2col">
           <div class="table-panel">
             <div class="table-panel-header"><h3>Phân bố Intent</h3></div>
             <div class="overflow-wrap">
@@ -745,13 +841,30 @@ async function apiFetch(url, options = {}) {
   return res;
 }
 
+// ── Sidebar toggle (mobile) ───────────────────────────────────────────────────
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('nav-overlay').classList.toggle('show');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('nav-overlay').classList.remove('show');
+}
+
 // ── Tab navigation ────────────────────────────────────────────────────────────
+const _TAB_TITLES = {
+  dashboard: 'Dashboard', products: 'Sản phẩm', logs: 'Token Logs',
+  metrics: 'Metrics', escalations: 'Escalations', config: 'Cấu hình',
+};
+
 function showTab(name) {
   ['dashboard','products','logs','config','metrics','escalations'].forEach(t => {
     const el = document.getElementById(`tab-${t}`);
     el.style.display = t === name ? (t === 'dashboard' ? 'block' : 'flex') : 'none';
     document.getElementById(`nav-${t}`).classList.toggle('active', t === name);
   });
+  document.getElementById('mobile-tab-title').textContent = _TAB_TITLES[name] || name;
+  closeSidebar();
   if (name === 'products') loadProducts();
   if (name === 'logs') loadLogs(0);
   if (name === 'metrics') loadMetrics();
