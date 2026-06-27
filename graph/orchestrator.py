@@ -4,6 +4,7 @@ from models.state import ChatState
 from agents.intent_agent import intent_node
 from agents.search_agent import search_node
 from agents.closing_agent import closing_node, general_node
+from agents.guard import guard_node, oos_node
 from services import session_store
 from services.streaming import setup_streaming, clear_streaming
 from services.context_manager import should_compress, compress_history
@@ -23,7 +24,14 @@ def _default_state(session_id: str) -> ChatState:
         is_ready_to_order=False,
         stage="intent",
         response="",
+        oos_count=0,
+        oos_type="",
+        oos_domain="",
     )
+
+
+def _route_after_guard(state: ChatState) -> str:
+    return "oos" if state.get("intent") == "out_of_scope" else "intent"
 
 
 def _route_after_intent(state: ChatState) -> str:
@@ -31,6 +39,8 @@ def _route_after_intent(state: ChatState) -> str:
     is_ready = state.get("is_ready_to_order", False)
     has_products = bool(state.get("recommended_products"))
 
+    if intent == "out_of_scope":
+        return "oos"
     if intent in ("product_inquiry", "price_check"):
         return "closing" if has_products else "search"
     if intent == "order_confirm" or is_ready:
@@ -40,18 +50,25 @@ def _route_after_intent(state: ChatState) -> str:
 
 def _build_graph():
     g = StateGraph(ChatState)
+    g.add_node("guard", guard_node)
     g.add_node("intent", intent_node)
     g.add_node("search", search_node)
     g.add_node("closing", closing_node)
     g.add_node("general", general_node)
-    g.set_entry_point("intent")
+    g.add_node("oos", oos_node)
+    g.set_entry_point("guard")
+    g.add_conditional_edges(
+        "guard", _route_after_guard,
+        {"intent": "intent", "oos": "oos"},
+    )
     g.add_conditional_edges(
         "intent", _route_after_intent,
-        {"search": "search", "closing": "closing", "general": "general"},
+        {"search": "search", "closing": "closing", "general": "general", "oos": "oos"},
     )
     g.add_edge("search", "closing")
     g.add_edge("closing", END)
     g.add_edge("general", END)
+    g.add_edge("oos", END)
     return g.compile()
 
 
@@ -67,9 +84,15 @@ async def process_message(
     if state is None:
         state = _default_state(session_id)
 
-    # Ensure context_summary exists for sessions created before this field was added
+    # Ensure fields added after initial deploy exist on older sessions
     if "context_summary" not in state:
         state["context_summary"] = ""
+    if "oos_count" not in state:
+        state["oos_count"] = 0
+    if "oos_type" not in state:
+        state["oos_type"] = ""
+    if "oos_domain" not in state:
+        state["oos_domain"] = ""
 
     messages = list(state.get("messages", []))
     messages.append({"role": "user", "content": user_message})

@@ -100,7 +100,7 @@ Phân tích TIN NHẮN CUỐI của khách dựa trên lịch sử hội thoại
 Chỉ trả về JSON, không có text khác:
 
 {
-  "intent": "product_inquiry" | "order_confirm" | "price_check" | "support" | "greeting" | "general",
+  "intent": "product_inquiry" | "order_confirm" | "price_check" | "support" | "greeting" | "general" | "out_of_scope",
   "category": "laptop" | "phone" | "tablet" | null,
   "requirements": {
     "budget_max": <số VND hoặc null>,
@@ -124,7 +124,8 @@ Quy tắc:
 - "15 triệu" → 15000000, "dưới 20tr" → budget_max: 20000000
 - "tầm 20-30 triệu" → min: 20000000, max: 30000000
 - is_ready_to_order = true khi khách nói "mua", "đặt", "chốt", "lấy cái đó" hoặc cung cấp địa chỉ
-- Nếu [Thông tin khách hàng đã ghi nhận] có category/budget, kế thừa nếu tin nhắn mới không thay đổi"""
+- Nếu [Thông tin khách hàng đã ghi nhận] có category/budget, kế thừa nếu tin nhắn mới không thay đổi
+- out_of_scope: chủ đề hoàn toàn không liên quan (ẩm thực, thời tiết, thể thao, chính trị, y tế, pháp luật, tình cảm, đầu tư tài chính...)"""
 
 
 def intent_node(state: ChatState) -> dict:

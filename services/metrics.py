@@ -22,6 +22,8 @@ class SessionMetrics:
     order_placed: bool = False
     ended: bool = False
     end_time: float = 0.0
+    oos_turns: int = 0             # out-of-scope messages this session
+    injection_attempts: int = 0   # prompt injection attempts
 
 
 class MetricsStore:
@@ -76,6 +78,12 @@ class MetricsStore:
     def record_intent_llm(self, session_id: str):
         self._get_or_create(session_id).intent_calls += 1
 
+    def record_oos(self, session_id: str, oos_type: str, domain: str = ""):
+        s = self._get_or_create(session_id)
+        s.oos_turns += 1
+        if oos_type == "injection":
+            s.injection_attempts += 1
+
     # ── Aggregation ──────────────────────────────────────────────────────────
     def get_active_count(self) -> int:
         return sum(1 for s in self._sessions.values() if not s.ended)
@@ -111,6 +119,8 @@ class MetricsStore:
         all_ttft = [t for s in sessions for t in s.ttft_ms]
         all_fast = sum(s.fast_path_hits for s in sessions)
         all_intent = sum(s.fast_path_hits + s.intent_calls for s in sessions)
+        total_oos = sum(s.oos_turns for s in sessions)
+        total_injections = sum(s.injection_attempts for s in sessions)
 
         intent_dist: dict[str, int] = defaultdict(int)
         for s in sessions:
@@ -135,6 +145,9 @@ class MetricsStore:
                 sorted(intent_dist.items(), key=lambda x: -x[1])
             ),
             "sessions_over_time": _sessions_over_time(sessions, hours),
+            "oos_turns": total_oos,
+            "oos_rate": round(total_oos / max(total_turns, 1) * 100, 1),
+            "injection_attempts": total_injections,
         }
 
     def _get_or_create(self, session_id: str) -> SessionMetrics:
