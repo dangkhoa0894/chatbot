@@ -42,6 +42,14 @@ def emit_escalation_event(
     except Exception as exc:
         logger.warning("Failed to persist escalation: %s", exc)
 
+    from services import session_monitor
+    session_monitor.flag_escalation(
+        session_id,
+        reason=reason,
+        customer_name=payload["customer_name"],
+        customer_phone=payload["customer_phone"],
+    )
+
 
 def _send_webhook(payload: dict, max_retries: int = 3) -> bool:
     url = getattr(settings, "ESCALATION_WEBHOOK_URL", "")

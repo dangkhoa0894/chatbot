@@ -5,6 +5,7 @@ import time
 from fastapi import WebSocket, WebSocketDisconnect
 from graph.orchestrator import process_message, get_session_state, clear_session
 from services import session_store
+from services import session_monitor
 from services.rate_limiter import rate_limiter
 from services.metrics import metrics
 from middleware.guardrails import check_input, check_output
@@ -52,6 +53,7 @@ class ConnectionManager:
             session_id = str(uuid.uuid4())
 
         self._active[session_id] = websocket
+        session_monitor.register(session_id)
         return session_id, resumed
 
 
@@ -63,6 +65,7 @@ class ConnectionManager:
         if ip in self._ip_counts:
             self._ip_counts[ip] = max(0, self._ip_counts[ip] - 1)
         self._active.pop(session_id, None)
+        session_monitor.unregister(session_id)
         metrics.session_end(session_id)
         # Session is NOT deleted here — client may reconnect and resume
 
@@ -119,6 +122,8 @@ async def websocket_endpoint(websocket: WebSocket):
 
             if not user_text:
                 continue
+
+            session_monitor.touch(session_id)
 
             # ── Rate limiting ────────────────────────────────────────────────
             if not rate_limiter.is_allowed(session_id):

@@ -104,6 +104,11 @@
         showCsat(data.context, data.turn_count);
         break;
 
+      case 'human_message':
+        hideTyping();
+        appendHumanSupport(data.content, data.agent_name || 'Nhân viên hỗ trợ');
+        break;
+
       case 'error':
         hideTyping();
         clearStream();
@@ -201,6 +206,27 @@
       <div class="order-row">📍 ${escHtml(order.address || '')}</div>
       <div class="order-row">📅 Giao trong 2–3 ngày · 💳 COD</div>`;
     return div;
+  }
+
+  // ── Human support message ────────────────────────────────────────
+  const SUPPORT_AVATAR_SVG = `
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="8" r="4" fill="white" opacity="0.95"/>
+      <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="white" stroke-width="1.8" stroke-linecap="round" opacity="0.85"/>
+    </svg>`;
+
+  function appendHumanSupport(text, agentName) {
+    hideWelcome();
+    const turn = document.createElement('div');
+    turn.className = 'msg-turn bot';
+    turn.innerHTML = `
+      <div class="msg-avatar" style="background:linear-gradient(135deg,#22c55e,#16a34a)">${SUPPORT_AVATAR_SVG}</div>
+      <div class="msg-body">
+        <div class="support-label">${escHtml(agentName)}</div>
+        <div class="text">${formatText(text)}</div>
+      </div>`;
+    messagesEl.appendChild(turn);
+    scrollBottom();
   }
 
   // ── Typing indicator ─────────────────────────────────────────────

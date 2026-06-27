@@ -274,3 +274,72 @@ def mark_resolved(escalation_id: int, authorization: str = Header(None)):
     _auth(authorization)
     resolve_escalation(escalation_id)
     return {"id": escalation_id, "status": "resolved"}
+
+
+# ── Live Session Monitor ───────────────────────────────────────────────────────
+@router.get("/live-sessions")
+def get_live_sessions(authorization: str = Header(None)):
+    _auth(authorization)
+    from services import session_monitor
+    return session_monitor.get_all()
+
+
+class AdminMessagePayload(BaseModel):
+    content: str
+
+
+@router.post("/sessions/{session_id}/message")
+async def send_to_session(
+    session_id: str,
+    body: AdminMessagePayload,
+    authorization: str = Header(None),
+):
+    _auth(authorization)
+    from channels.websocket_handler import manager
+    from services import session_monitor
+    from services import session_store
+
+    info = session_monitor.get(session_id)
+    if info is None:
+        raise HTTPException(status_code=404, detail="Session not active")
+
+    await manager.send(session_id, {
+        "type": "human_message",
+        "content": body.content,
+        "agent_name": "Nhân viên hỗ trợ",
+    })
+
+    session_monitor.set_admin_joined(session_id, True)
+
+    state = await session_store.get_session(session_id) or {}
+    msgs = state.get("messages", [])
+    msgs.append({"role": "support", "content": body.content})
+    state["messages"] = msgs
+    await session_store.save_session(session_id, state)
+
+    return {"ok": True}
+
+
+@router.get("/sessions/{session_id}/history")
+async def get_session_history(
+    session_id: str,
+    authorization: str = Header(None),
+):
+    _auth(authorization)
+    from services import session_store
+
+    state = await session_store.get_session(session_id)
+    if state is None:
+        return {"session_id": session_id, "history": []}
+    return {"session_id": session_id, "history": state.get("messages", [])}
+
+
+@router.post("/sessions/{session_id}/resolve")
+def resolve_session_escalation(
+    session_id: str,
+    authorization: str = Header(None),
+):
+    _auth(authorization)
+    from services import session_monitor
+    session_monitor.unflag(session_id)
+    return {"ok": True, "session_id": session_id}

@@ -230,6 +230,58 @@ canvas{display:block;width:100%;height:160px}
   .stat-grid{grid-template-columns:1fr}
   .stat-value{font-size:22px}
 }
+
+/* ── Live Monitor ── */
+.monitor-wrap{display:flex;height:100%;overflow:hidden}
+.session-list-pane{width:280px;flex-shrink:0;border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;background:var(--surface)}
+.session-list-head{padding:10px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.session-list-head h3{font-size:13px;font-weight:600}
+.session-count{font-size:11.5px;color:var(--muted)}
+.session-list-scroll{flex:1;overflow-y:auto}
+.session-item{padding:11px 13px;border-bottom:1px solid rgba(48,54,61,.4);cursor:pointer;transition:background .15s;position:relative}
+.session-item:hover{background:rgba(255,255,255,.04)}
+.session-item.active{background:var(--blue-dim)}
+.session-item.escalated{border-left:3px solid var(--red)}
+.session-item-top{display:flex;align-items:center;gap:5px;margin-bottom:5px}
+.session-id-chip{font-family:'Courier New',monospace;font-size:11px;color:var(--text)}
+.pulse-dot{width:7px;height:7px;border-radius:50%;background:var(--red);display:inline-block;flex-shrink:0;animation:mon-pulse 1.4s ease-in-out infinite}
+@keyframes mon-pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.45;transform:scale(.75)}}
+.session-meta{font-size:11px;color:var(--muted);margin-top:3px;line-height:1.4}
+.session-esc-reason{font-size:11px;color:var(--red);margin-top:3px}
+
+.chat-pane{flex:1;display:flex;flex-direction:column;overflow:hidden;background:var(--bg)}
+.chat-pane-placeholder{flex:1;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:13px;text-align:center;padding:24px}
+.chat-pane-inner{flex:1;display:none;flex-direction:column;overflow:hidden}
+.chat-pane-header{padding:12px 16px;border-bottom:1px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:space-between;background:var(--surface)}
+.chat-pane-title{display:flex;flex-direction:column;gap:2px}
+.chat-pane-sid{font-family:'Courier New',monospace;font-size:12px;color:var(--text);font-weight:600}
+.chat-pane-sub{font-size:11px;color:var(--muted)}
+.chat-pane-msgs{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:8px}
+.chat-pane-footer{padding:10px 12px;border-top:1px solid var(--border);display:flex;gap:8px;flex-shrink:0;background:var(--surface)}
+.chat-pane-footer textarea{flex:1;padding:8px 12px;background:var(--panel);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;font-family:inherit;resize:none;outline:none;line-height:1.5;min-height:38px;max-height:120px}
+.chat-pane-footer textarea:focus{border-color:var(--blue)}
+.chat-pane-footer button{padding:8px 14px;background:var(--blue);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;flex-shrink:0;align-self:flex-end}
+.chat-pane-footer button:hover{opacity:.9}
+
+.mon-msg{max-width:78%;display:flex;flex-direction:column;gap:2px}
+.mon-msg.user{align-self:flex-end}
+.mon-msg.assistant,.mon-msg.support{align-self:flex-start}
+.mon-msg-sender{font-size:10.5px;font-weight:600;color:var(--muted)}
+.mon-msg.user .mon-msg-sender{text-align:right;color:var(--muted)}
+.mon-msg-bubble{padding:8px 12px;border-radius:12px;font-size:13px;line-height:1.55;word-break:break-word}
+.mon-msg.user .mon-msg-bubble{background:rgba(255,255,255,.07);border-bottom-right-radius:3px;color:var(--text)}
+.mon-msg.assistant .mon-msg-bubble{background:rgba(59,130,246,.1);border-bottom-left-radius:3px;color:var(--text)}
+.mon-msg.support .mon-msg-bubble{background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.25);border-bottom-left-radius:3px;color:var(--text)}
+
+@media(max-width:680px){
+  .session-list-pane{width:100%}
+  .chat-pane{display:none}
+  .monitor-wrap.chat-open .session-list-pane{display:none}
+  .monitor-wrap.chat-open .chat-pane{display:flex}
+  .chat-pane-header .back-btn{display:inline-flex}
+}
+.back-btn{display:none;align-items:center;gap:4px;padding:5px 10px;background:transparent;border:1px solid var(--border);border-radius:6px;color:var(--muted);font-size:12px;cursor:pointer}
+.back-btn:hover{color:var(--text)}
 </style>
 </head>
 <body>
@@ -258,6 +310,10 @@ canvas{display:block;width:100%;height:160px}
     </div>
     <nav>
       <div class="nav-item active" onclick="showTab('dashboard')" id="nav-dashboard">Dashboard</div>
+      <div class="nav-item" onclick="showTab('monitor')" id="nav-monitor" style="display:flex;align-items:center;justify-content:space-between">
+        <span>Hỗ trợ trực tuyến</span>
+        <span id="monitor-badge" style="display:none;background:var(--red);color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;min-width:18px;text-align:center"></span>
+      </div>
       <div class="nav-item" onclick="showTab('products')" id="nav-products">Sản phẩm</div>
       <div class="nav-item" onclick="showTab('logs')" id="nav-logs">Token Logs</div>
       <div class="nav-item" onclick="showTab('metrics')" id="nav-metrics">Metrics</div>
@@ -508,6 +564,64 @@ canvas{display:block;width:100%;height:160px}
           <span id="esc-count">—</span>
           <button class="btn btn-ghost btn-sm" id="esc-prev" onclick="changeEscPage(-1)" disabled>← Trước</button>
           <button class="btn btn-ghost btn-sm" id="esc-next" onclick="changeEscPage(1)" disabled>Tiếp →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Live Monitor tab ── -->
+    <div id="tab-monitor" style="display:none;flex-direction:column;height:100%">
+      <div class="topbar">
+        <h2>Hỗ trợ trực tuyến</h2>
+        <div class="actions">
+          <span id="monitor-status" style="font-size:12px;color:var(--muted)">Chưa kết nối</span>
+          <button class="btn btn-ghost" onclick="loadLiveSessions()">↻ Refresh</button>
+        </div>
+      </div>
+      <div class="monitor-wrap" id="monitor-wrap">
+        <!-- Left: session list -->
+        <div class="session-list-pane">
+          <div class="session-list-head">
+            <h3>Phiên hoạt động</h3>
+            <span class="session-count" id="monitor-session-count">0 phiên</span>
+          </div>
+          <div class="session-list-scroll" id="session-list-scroll">
+            <div class="empty-state" style="padding:32px 16px">
+              <div class="icon">📡</div>
+              <p>Chưa có phiên nào</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: chat panel -->
+        <div class="chat-pane" id="chat-pane">
+          <div class="chat-pane-placeholder" id="chat-no-selection">
+            <div>
+              <div style="font-size:36px;margin-bottom:12px">💬</div>
+              <p>Chọn một phiên để xem hội thoại<br>và nhắn tin với khách hàng</p>
+            </div>
+          </div>
+          <div class="chat-pane-inner" id="chat-pane-inner">
+            <div class="chat-pane-header">
+              <button class="back-btn" onclick="closeChatPane()">← Quay lại</button>
+              <div class="chat-pane-title">
+                <div class="chat-pane-sid" id="chat-session-id">—</div>
+                <div class="chat-pane-sub" id="chat-session-sub">—</div>
+              </div>
+              <div style="display:flex;gap:6px;align-items:center">
+                <button class="btn btn-ghost btn-sm" onclick="resolveMonitorSession()" id="btn-resolve-session" style="display:none">✓ Giải quyết</button>
+              </div>
+            </div>
+            <div class="chat-pane-msgs" id="chat-pane-msgs">
+              <div style="text-align:center;color:var(--muted);font-size:13px;padding:24px">Đang tải…</div>
+            </div>
+            <div class="chat-pane-footer">
+              <textarea id="admin-msg-input" placeholder="Nhắn tin với khách hàng…" rows="1"
+                oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px'"
+                onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAdminMessage()}"
+              ></textarea>
+              <button onclick="sendAdminMessage()">Gửi</button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -855,13 +969,17 @@ function closeSidebar() {
 const _TAB_TITLES = {
   dashboard: 'Dashboard', products: 'Sản phẩm', logs: 'Token Logs',
   metrics: 'Metrics', escalations: 'Escalations', config: 'Cấu hình',
+  monitor: 'Hỗ trợ trực tuyến',
 };
 
+const _ALL_TABS = ['dashboard','products','logs','config','metrics','escalations','monitor'];
+
 function showTab(name) {
-  ['dashboard','products','logs','config','metrics','escalations'].forEach(t => {
+  _ALL_TABS.forEach(t => {
     const el = document.getElementById(`tab-${t}`);
     el.style.display = t === name ? (t === 'dashboard' ? 'block' : 'flex') : 'none';
-    document.getElementById(`nav-${t}`).classList.toggle('active', t === name);
+    const nav = document.getElementById(`nav-${t}`);
+    if (nav) nav.classList.toggle('active', t === name);
   });
   document.getElementById('mobile-tab-title').textContent = _TAB_TITLES[name] || name;
   closeSidebar();
@@ -870,6 +988,8 @@ function showTab(name) {
   if (name === 'metrics') loadMetrics();
   if (name === 'config') loadConfig();
   if (name === 'escalations') loadEscalations(0);
+  if (name === 'monitor') startMonitor();
+  else stopMonitor();
 }
 
 // ── Dashboard ─────────────────────────────────────────────────────────────────
@@ -1296,6 +1416,168 @@ async function resolveEsc(id) {
 }
 
 function changeEscPage(dir) { loadEscalations(Math.max(0, escOffset + dir * escLimit)); }
+
+// ── Live Monitor ──────────────────────────────────────────────────────────────
+let _monitorSessions = [];
+let _selectedSession = null;
+let _monitorTimer = null;
+let _chatTimer = null;
+
+async function loadLiveSessions() {
+  try {
+    const r = await fetch('/admin/api/live-sessions', { headers: auth() });
+    if (!r.ok) return;
+    _monitorSessions = await r.json();
+
+    // Update badge: count escalated sessions
+    const escCount = _monitorSessions.filter(s => s.escalated).length;
+    const badge = document.getElementById('monitor-badge');
+    if (badge) {
+      badge.textContent = escCount;
+      badge.style.display = escCount > 0 ? '' : 'none';
+    }
+
+    const statusEl = document.getElementById('monitor-status');
+    if (statusEl) statusEl.textContent = `${_monitorSessions.length} phiên hoạt động`;
+
+    const countEl = document.getElementById('monitor-session-count');
+    if (countEl) countEl.textContent = `${_monitorSessions.length} phiên`;
+
+    renderSessionList(_monitorSessions);
+  } catch(e) {}
+}
+
+function renderSessionList(sessions) {
+  const el = document.getElementById('session-list-scroll');
+  if (!el) return;
+  if (!sessions.length) {
+    el.innerHTML = '<div class="empty-state" style="padding:32px 16px"><div class="icon">📡</div><p>Chưa có phiên nào</p></div>';
+    return;
+  }
+  const sorted = [...sessions].sort((a, b) => {
+    if (a.escalated && !b.escalated) return -1;
+    if (!a.escalated && b.escalated) return 1;
+    return b.last_activity - a.last_activity;
+  });
+  const now = Date.now() / 1000;
+  el.innerHTML = sorted.map(s => {
+    const isActive = s.session_id === _selectedSession;
+    const age = Math.round((now - s.last_activity) / 60);
+    const ageStr = age < 1 ? 'Vừa xong' : `${age} phút trước`;
+    return `
+      <div class="session-item${isActive ? ' active' : ''}${s.escalated ? ' escalated' : ''}" onclick="selectSession('${esc(s.session_id)}')">
+        <div class="session-item-top">
+          ${s.escalated ? `<span class="pulse-dot"></span>` : ''}
+          <span class="badge ${s.escalated ? 'badge-red' : 'badge-green'}" style="font-size:9.5px">${s.escalated ? 'ESCALATED' : 'ACTIVE'}</span>
+          ${s.admin_joined ? '<span class="badge badge-blue" style="font-size:9.5px">Admin</span>' : ''}
+        </div>
+        <div class="session-id-chip">${esc(s.session_id.slice(0, 12))}…</div>
+        ${s.customer_name ? `<div class="session-meta">${esc(s.customer_name)}${s.customer_phone ? ' · ' + esc(s.customer_phone) : ''}</div>` : ''}
+        ${s.escalation_reason ? `<div class="session-esc-reason">${esc(s.escalation_reason)}</div>` : ''}
+        <div class="session-meta">${ageStr}</div>
+      </div>`;
+  }).join('');
+}
+
+async function selectSession(sessionId) {
+  _selectedSession = sessionId;
+  renderSessionList(_monitorSessions);
+
+  const s = _monitorSessions.find(x => x.session_id === sessionId);
+  document.getElementById('chat-session-id').textContent = sessionId.slice(0, 16) + '…';
+  const subParts = [];
+  if (s?.escalated) subParts.push('⚠ Cần hỗ trợ');
+  if (s?.customer_name) subParts.push(s.customer_name + (s.customer_phone ? ' · ' + s.customer_phone : ''));
+  document.getElementById('chat-session-sub').textContent = subParts.join(' — ') || 'Đang hoạt động';
+
+  const resolveBtn = document.getElementById('btn-resolve-session');
+  if (resolveBtn) resolveBtn.style.display = s?.escalated ? '' : 'none';
+
+  document.getElementById('chat-no-selection').style.display = 'none';
+  document.getElementById('chat-pane-inner').style.display = 'flex';
+
+  // Mobile: show chat panel
+  document.getElementById('monitor-wrap').classList.add('chat-open');
+
+  await loadChatHistory(sessionId);
+  clearInterval(_chatTimer);
+  _chatTimer = setInterval(() => { if (_selectedSession) loadChatHistory(_selectedSession); }, 3000);
+}
+
+function closeChatPane() {
+  _selectedSession = null;
+  clearInterval(_chatTimer);
+  document.getElementById('monitor-wrap').classList.remove('chat-open');
+  document.getElementById('chat-no-selection').style.display = 'flex';
+  document.getElementById('chat-pane-inner').style.display = 'none';
+  renderSessionList(_monitorSessions);
+}
+
+async function loadChatHistory(sessionId) {
+  try {
+    const r = await fetch(`/admin/api/sessions/${sessionId}/history`, { headers: auth() });
+    if (!r.ok) return;
+    const data = await r.json();
+    renderChatHistory(data.history || []);
+  } catch(e) {}
+}
+
+function renderChatHistory(history) {
+  const el = document.getElementById('chat-pane-msgs');
+  if (!el) return;
+  if (!history.length) {
+    el.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:13px;padding:24px">Chưa có tin nhắn</div>';
+    return;
+  }
+  const wasAtBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 60;
+  const roleName = { user: 'Khách hàng', assistant: 'TechShop AI', support: 'Nhân viên hỗ trợ' };
+  el.innerHTML = history.map(m => {
+    const role = m.role || 'assistant';
+    return `
+      <div class="mon-msg ${role}">
+        <div class="mon-msg-sender">${roleName[role] || role}</div>
+        <div class="mon-msg-bubble">${esc(m.content)}</div>
+      </div>`;
+  }).join('');
+  if (wasAtBottom) el.scrollTop = el.scrollHeight;
+}
+
+async function sendAdminMessage() {
+  const input = document.getElementById('admin-msg-input');
+  const text = (input.value || '').trim();
+  if (!text || !_selectedSession) return;
+  input.value = '';
+  input.style.height = 'auto';
+  try {
+    await fetch(`/admin/api/sessions/${_selectedSession}/message`, {
+      method: 'POST',
+      headers: { ...auth(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content: text }),
+    });
+    await loadChatHistory(_selectedSession);
+  } catch(e) {}
+}
+
+async function resolveMonitorSession() {
+  if (!_selectedSession) return;
+  await fetch(`/admin/api/sessions/${_selectedSession}/resolve`, { method: 'POST', headers: auth() });
+  document.getElementById('btn-resolve-session').style.display = 'none';
+  document.getElementById('chat-session-sub').textContent = 'Đã giải quyết';
+  await loadLiveSessions();
+}
+
+function startMonitor() {
+  loadLiveSessions();
+  clearInterval(_monitorTimer);
+  _monitorTimer = setInterval(loadLiveSessions, 5000);
+}
+
+function stopMonitor() {
+  clearInterval(_monitorTimer);
+  clearInterval(_chatTimer);
+  _monitorTimer = null;
+  _chatTimer = null;
+}
 
 // ── Metrics ───────────────────────────────────────────────────────────────────
 async function loadMetrics() {
