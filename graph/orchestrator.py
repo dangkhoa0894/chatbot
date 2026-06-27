@@ -6,6 +6,7 @@ from agents.search_agent import search_node
 from agents.closing_agent import closing_node, general_node
 from agents.guard import guard_node, oos_node
 from agents.escalation import escalation_node
+from agents.tools_node import tools_node
 from services import session_store
 from services.streaming import setup_streaming, clear_streaming
 from services.context_manager import should_compress, compress_history
@@ -31,6 +32,9 @@ def _default_state(session_id: str) -> ChatState:
         escalation_requested=False,
         escalation_reason="",
         stuck_count=0,
+        csat_sent=False,
+        tools_data={},
+        sentiment="neutral",
     )
 
 
@@ -46,23 +50,31 @@ def _route_after_guard(state: ChatState) -> str:
 def _route_after_intent(state: ChatState) -> str:
     intent = state.get("intent", "general")
     is_ready = state.get("is_ready_to_order", False)
-    has_products = bool(state.get("recommended_products"))
 
-    if intent in ("escalation", "out_of_scope") and intent == "escalation":
+    if intent == "escalation":
         return "escalation"
     if intent == "out_of_scope":
         return "oos"
-    if intent in ("product_inquiry", "price_check"):
-        return "closing" if has_products else "search"
-    if intent == "order_confirm" or is_ready:
-        return "closing"
+    if intent in ("product_inquiry", "price_check", "order_confirm", "order_status"):
+        return "tools"
+    if is_ready:
+        return "tools"
     return "general"
+
+
+def _route_after_tools(state: ChatState) -> str:
+    intent = state.get("intent", "general")
+    has_products = bool(state.get("recommended_products"))
+    if intent in ("product_inquiry", "price_check") and not has_products:
+        return "search"
+    return "closing"
 
 
 def _build_graph():
     g = StateGraph(ChatState)
     g.add_node("guard", guard_node)
     g.add_node("intent", intent_node)
+    g.add_node("tools", tools_node)
     g.add_node("search", search_node)
     g.add_node("closing", closing_node)
     g.add_node("general", general_node)
@@ -75,8 +87,12 @@ def _build_graph():
     )
     g.add_conditional_edges(
         "intent", _route_after_intent,
-        {"search": "search", "closing": "closing", "general": "general",
+        {"tools": "tools", "general": "general",
          "oos": "oos", "escalation": "escalation"},
+    )
+    g.add_conditional_edges(
+        "tools", _route_after_tools,
+        {"search": "search", "closing": "closing"},
     )
     g.add_edge("search", "closing")
     g.add_edge("closing", END)
@@ -113,6 +129,12 @@ async def process_message(
         state["escalation_reason"] = ""
     if "stuck_count" not in state:
         state["stuck_count"] = 0
+    if "csat_sent" not in state:
+        state["csat_sent"] = False
+    if "tools_data" not in state:
+        state["tools_data"] = {}
+    if "sentiment" not in state:
+        state["sentiment"] = "neutral"
 
     messages = list(state.get("messages", []))
     messages.append({"role": "user", "content": user_message})

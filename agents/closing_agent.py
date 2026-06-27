@@ -35,6 +35,10 @@ Dựa trên ngữ cảnh, sản phẩm và thông tin đặt hàng, thực hiệ
 ━━━━━━━━━━━━━━━━━━━━
 Cảm ơn bạn đã tin tưởng TechShop AI! 🙏
 
+**[D] Trạng thái đơn hàng** (intent=order_status):
+→ Thông báo trạng thái từ [Trạng thái đơn hàng] trong context
+→ Trấn an khách, dự kiến thời gian giao
+
 Phong cách: Thân thiện, ngắn gọn, tiếng Việt tự nhiên, emoji vừa phải. Không dài dòng."""
 
 _GENERAL_SYSTEM = """Bạn là nhân viên hỗ trợ khách hàng thân thiện của TechShop AI — cửa hàng điện tử bán laptop, điện thoại, máy tính bảng.
@@ -96,6 +100,45 @@ def closing_node(state: ChatState) -> dict:
         if lines:
             parts.append("[Thông tin đặt hàng]:\n" + "\n".join(lines))
 
+    # Inject real-time tools data
+    tools_data = state.get("tools_data", {})
+
+    inv_warnings = []
+    for p in products[:3]:
+        inv = tools_data.get(f"inv_{p['id']}")
+        if inv and not inv.get("available"):
+            inv_warnings.append(f"{p['name']}: HẾT HÀNG (nhập lại {inv.get('restock_eta', 'chưa rõ')})")
+        elif inv and inv.get("stock", 99) <= 3:
+            inv_warnings.append(f"{p['name']}: Sắp hết hàng (còn {inv['stock']} cái)")
+    if inv_warnings:
+        parts.append("[Cảnh báo tồn kho]:\n" + "\n".join(inv_warnings))
+
+    promo = tools_data.get("promo")
+    if promo:
+        parts.append(f"[Khuyến mãi hiện tại]: {promo['label']} — {promo.get('ends_at', '')}")
+
+    order_status = tools_data.get("order_status")
+    if order_status:
+        parts.append(
+            f"[Trạng thái đơn hàng #{order_status.get('order_id', '')}]: "
+            f"{order_status['label']} | Vị trí: {order_status['location']} | "
+            f"ETA: {order_status.get('eta', '—')}"
+        )
+
+    # Sentiment tone hint
+    sentiment = state.get("sentiment", "neutral")
+    if sentiment == "negative":
+        parts.append("[Gợi ý tone]: Khách đang không hài lòng — ưu tiên empathy, thừa nhận vấn đề trước khi tư vấn sản phẩm")
+    elif sentiment == "positive":
+        parts.append("[Gợi ý tone]: Khách đang tích cực — có thể upsell nhẹ hoặc reinforce lựa chọn")
+
+    # Knowledge base context
+    from services.knowledge_base import retrieve as _kb_retrieve
+    last_user = next((m["content"] for m in reversed(state.get("messages", [])) if m["role"] == "user"), "")
+    kb_chunks = _kb_retrieve(last_user)
+    if kb_chunks:
+        parts.append("[Thông tin chính sách liên quan]:\n" + "\n".join(kb_chunks))
+
     is_confirming = intent == "order_confirm" and has_address and (selected or order_info.get("product_hint"))
     order_id = None
     if is_confirming:
@@ -132,9 +175,14 @@ def closing_node(state: ChatState) -> dict:
 
 
 def general_node(state: ChatState) -> dict:
+    from services.knowledge_base import retrieve as _kb_retrieve
+    last_user = next((m["content"] for m in reversed(state.get("messages", [])) if m["role"] == "user"), "")
+    kb_chunks = _kb_retrieve(last_user)
+    extra_system = ("[Thông tin chính sách liên quan]:\n" + "\n".join(kb_chunks)) if kb_chunks else None
+
     try:
         response = chat(
-            messages=build_messages(state, _GENERAL_SYSTEM),
+            messages=build_messages(state, _GENERAL_SYSTEM, extra_system=extra_system),
             max_tokens=_rc.get_max_tokens("general"),
             agent="general",
             session_id=state.get("session_id", ""),

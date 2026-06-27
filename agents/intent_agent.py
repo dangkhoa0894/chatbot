@@ -8,6 +8,10 @@ from services import runtime_config as _rc
 
 # ── Fast-path keyword rules (no LLM call needed) ───────────────────────────────
 _GREETING_TRIGGERS = {'xin chào', 'chào', 'hi', 'hello', 'hey', 'alo', 'xin chao', 'chao', 'helo'}
+_ORDER_STATUS_TRIGGERS = {'đơn hàng của tôi', 'giao hàng chưa', 'đơn của tôi', 'khi nào giao', 'tracking đơn', 'đơn hàng đâu'}
+_ORDER_ID_RE = re.compile(r'\bORD-[A-Z0-9]{4,8}\b')
+_POSITIVE_WORDS = {'cảm ơn', 'tuyệt', 'hay', 'tốt', 'ok', 'được', 'thích', 'ổn'}
+_NEGATIVE_WORDS = {'tệ', 'chán', 'kém', 'không ổn', 'thất vọng', 'tức', 'bực'}
 
 _ADDRESS_RE = re.compile(
     r'\b\d+[\s,/\\]*.{0,30}(đường|phố|phường|quận|huyện|tỉnh|thành phố|tp\.?)\b',
@@ -81,17 +85,31 @@ def _fast_intent(text: str) -> dict | None:
     t = text.lower().strip()
     words = set(re.split(r'\W+', t))
 
+    # Sentiment detection
+    sentiment = 'positive' if words & _POSITIVE_WORDS else ('negative' if words & _NEGATIVE_WORDS else 'neutral')
+
     if words & _GREETING_TRIGGERS and len(text) < 40 and not any(
         k in t for k in ('laptop', 'điện thoại', 'phone', 'tablet', 'máy', 'giá', 'mua')
     ):
         return {'intent': 'greeting', 'category': None, 'requirements': {},
-                'order_info': {}, 'is_ready_to_order': False, 'reasoning': 'fast-path'}
+                'order_info': {}, 'is_ready_to_order': False, 'sentiment': sentiment,
+                'reasoning': 'fast-path'}
 
     if _ADDRESS_RE.search(text):
         return {'intent': 'order_confirm', 'category': None, 'requirements': {},
-                'order_info': {}, 'is_ready_to_order': True, 'reasoning': 'fast-path address'}
+                'order_info': {}, 'is_ready_to_order': True, 'sentiment': sentiment,
+                'reasoning': 'fast-path address'}
 
-    return _fast_product_intent(text)
+    # Order status detection
+    if any(trigger in t for trigger in _ORDER_STATUS_TRIGGERS) or _ORDER_ID_RE.search(text):
+        return {'intent': 'order_status', 'category': None, 'requirements': {},
+                'order_info': {}, 'is_ready_to_order': False, 'sentiment': sentiment,
+                'reasoning': 'fast-path order_status'}
+
+    result = _fast_product_intent(text)
+    if result:
+        result['sentiment'] = sentiment
+    return result
 
 
 _SYSTEM = """Bạn là AI phân tích ý định khách hàng cho cửa hàng điện tử bán laptop, điện thoại, máy tính bảng.
@@ -100,7 +118,7 @@ Phân tích TIN NHẮN CUỐI của khách dựa trên lịch sử hội thoại
 Chỉ trả về JSON, không có text khác:
 
 {
-  "intent": "product_inquiry" | "order_confirm" | "price_check" | "support" | "greeting" | "general" | "out_of_scope",
+  "intent": "product_inquiry" | "order_confirm" | "order_status" | "price_check" | "support" | "greeting" | "general" | "out_of_scope",
   "category": "laptop" | "phone" | "tablet" | null,
   "requirements": {
     "budget_max": <số VND hoặc null>,
@@ -117,6 +135,7 @@ Chỉ trả về JSON, không có text khác:
     "product_hint": "<tên/mã sản phẩm muốn mua hoặc null>"
   },
   "is_ready_to_order": <true/false>,
+  "sentiment": "positive" | "neutral" | "negative",
   "reasoning": "<giải thích ngắn>"
 }
 
@@ -125,7 +144,9 @@ Quy tắc:
 - "tầm 20-30 triệu" → min: 20000000, max: 30000000
 - is_ready_to_order = true khi khách nói "mua", "đặt", "chốt", "lấy cái đó" hoặc cung cấp địa chỉ
 - Nếu [Thông tin khách hàng đã ghi nhận] có category/budget, kế thừa nếu tin nhắn mới không thay đổi
-- out_of_scope: chủ đề hoàn toàn không liên quan (ẩm thực, thời tiết, thể thao, chính trị, y tế, pháp luật, tình cảm, đầu tư tài chính...)"""
+- out_of_scope: chủ đề hoàn toàn không liên quan (ẩm thực, thời tiết, thể thao, chính trị, y tế, pháp luật, tình cảm, đầu tư tài chính...)
+- order_status: khi khách hỏi "đơn hàng của tôi ở đâu", "khi nào giao", "tracking đơn"
+- sentiment: dựa trên giọng điệu tin nhắn cuối — positive (vui vẻ, hài lòng, cảm ơn), negative (bực bội, thất vọng, khó chịu), neutral (trung lập)"""
 
 
 def intent_node(state: ChatState) -> dict:
@@ -159,6 +180,7 @@ def intent_node(state: ChatState) -> dict:
             "user_requirements": fast.get("requirements", {}),
             "order_info": merged_order,
             "is_ready_to_order": fast.get("is_ready_to_order", False),
+            "sentiment": fast.get("sentiment", "neutral"),
             "stage": "intent",
         }
 
@@ -205,5 +227,6 @@ def intent_node(state: ChatState) -> dict:
         "user_requirements": result.get("requirements", {}),
         "order_info": merged_order,
         "is_ready_to_order": result.get("is_ready_to_order", False),
+        "sentiment": result.get("sentiment", "neutral"),
         "stage": "intent",
     }

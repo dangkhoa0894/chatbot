@@ -148,6 +148,7 @@ async def websocket_endpoint(websocket: WebSocket):
                     error=False,
                     order_placed=order_confirmed,
                 )
+                metrics.record_sentiment(session_id, state.get("sentiment", "neutral"))
 
                 await manager.send(session_id, {
                     "type": "message",
@@ -160,6 +161,19 @@ async def websocket_endpoint(websocket: WebSocket):
                         "order": state.get("order_info") if order_confirmed else None,
                     },
                 })
+
+                # Send CSAT prompt once per session after order confirmation
+                if order_confirmed and not state.get("csat_sent"):
+                    await manager.send(session_id, {
+                        "type": "csat_prompt",
+                        "context": "order_confirmed",
+                        "turn_count": len(state.get("messages", [])),
+                    })
+                    # Mark csat_sent in session to avoid re-prompting
+                    _latest = await session_store.get_session(session_id)
+                    if _latest:
+                        _latest["csat_sent"] = True
+                        await session_store.save_session(session_id, _latest)
 
             except Exception:
                 metrics.record_turn(session_id, error=True)

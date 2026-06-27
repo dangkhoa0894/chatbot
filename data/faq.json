@@ -1,0 +1,52 @@
+{
+  "entries": [
+    {
+      "id": "warranty",
+      "title": "Chính sách bảo hành",
+      "keywords": ["bảo hành", "bao lâu", "hỏng", "lỗi", "sửa", "warranty", "bảo lãnh", "tháng"],
+      "content": "Tất cả sản phẩm tại TechShop được bảo hành 12 tháng chính hãng. Bảo hành bao gồm lỗi sản xuất, linh kiện bị hỏng do nhà sản xuất. Không bảo hành các trường hợp: hỏng do va đập, vỡ màn hình, vào nước, tự ý sửa chữa ngoài. Mang sản phẩm kèm hóa đơn mua hàng đến cửa hàng để được hỗ trợ bảo hành."
+    },
+    {
+      "id": "returns",
+      "title": "Chính sách đổi trả",
+      "keywords": ["đổi trả", "trả hàng", "đổi hàng", "hoàn tiền", "7 ngày", "trả lại", "return", "đổi máy"],
+      "content": "TechShop hỗ trợ đổi trả trong vòng 7 ngày kể từ ngày mua. Điều kiện: sản phẩm còn nguyên vẹn, đủ hộp và phụ kiện, không có dấu hiệu sử dụng, còn seal hoặc tem bảo hành chưa bóc. Sản phẩm lỗi nhà sản xuất được đổi mới trong 30 ngày. Liên hệ hotline để được hướng dẫn thủ tục đổi trả."
+    },
+    {
+      "id": "shipping",
+      "title": "Vận chuyển & giao hàng",
+      "keywords": ["vận chuyển", "giao hàng", "ship", "miễn phí", "nội thành", "toàn quốc", "bao lâu giao", "phí ship"],
+      "content": "Miễn phí giao hàng nội thành (Hà Nội, TP.HCM) trong ngày với đơn đặt trước 15h. Giao toàn quốc 1-3 ngày làm việc với phí ship từ 30.000đ (miễn phí đơn từ 5 triệu). Có thể chọn nhận tại cửa hàng miễn phí. Theo dõi đơn hàng qua SMS/email sau khi xác nhận đơn."
+    },
+    {
+      "id": "payment",
+      "title": "Phương thức thanh toán",
+      "keywords": ["thanh toán", "trả tiền", "COD", "chuyển khoản", "trả góp", "payment", "tiền mặt", "online"],
+      "content": "TechShop hỗ trợ nhiều phương thức thanh toán: COD (tiền mặt khi nhận hàng), chuyển khoản ngân hàng (giảm thêm 1%), thanh toán qua ví điện tử (MoMo, ZaloPay, VNPay), và trả góp 0% lãi suất 6-24 tháng qua thẻ tín dụng."
+    },
+    {
+      "id": "installment",
+      "title": "Trả góp 0% lãi suất",
+      "keywords": ["trả góp", "góp", "lãi suất", "0%", "tháng", "trả dần", "installment", "thẻ tín dụng", "ngân hàng"],
+      "content": "Hỗ trợ trả góp 0% lãi suất từ 6 đến 24 tháng qua thẻ tín dụng các ngân hàng: Vietcombank, Techcombank, VPBank, MB Bank, ACB, Sacombank và nhiều ngân hàng khác. Điều kiện: có thẻ tín dụng còn hạn mức, mang CMND/CCCD và thẻ tín dụng khi đến mua. Thủ tục đơn giản, duyệt nhanh trong 15 phút."
+    },
+    {
+      "id": "support",
+      "title": "Hỗ trợ khách hàng",
+      "keywords": ["hỗ trợ", "liên hệ", "hotline", "zalo", "email", "tư vấn", "giờ làm việc", "support", "nhân viên"],
+      "content": "TechShop hỗ trợ khách hàng từ 8h00 đến 22h00 hàng ngày (kể cả cuối tuần). Kênh liên hệ: Hotline 1800-xxxx (miễn phí), Zalo OA TechShop, Email support@techshop.vn. Thời gian phản hồi email trong vòng 2 giờ. Chat trực tiếp trên website và ứng dụng."
+    },
+    {
+      "id": "promotions",
+      "title": "Chương trình khuyến mãi",
+      "keywords": ["khuyến mãi", "giảm giá", "ưu đãi", "sale", "promotion", "voucher", "coupon", "sinh viên", "student"],
+      "content": "TechShop thường xuyên có các chương trình khuyến mãi hấp dẫn: giảm giá theo mùa, flash sale cuối tuần, ưu đãi khai trương. Sinh viên được giảm thêm 3% khi xuất trình thẻ sinh viên còn hiệu lực. Đăng ký thành viên nhận ngay voucher 200.000đ cho lần mua đầu. Theo dõi website và fanpage để cập nhật ưu đãi mới nhất."
+    },
+    {
+      "id": "technical",
+      "title": "Hỗ trợ kỹ thuật & cài đặt",
+      "keywords": ["cài đặt", "kỹ thuật", "setup", "cài phần mềm", "chuyển dữ liệu", "data", "phần mềm", "technical", "thiết lập"],
+      "content": "TechShop cung cấp dịch vụ hỗ trợ kỹ thuật miễn phí: cài đặt máy mới, cài phần mềm cơ bản (Office, antivirus), chuyển dữ liệu từ máy cũ, hướng dẫn sử dụng tại chỗ. Dịch vụ này miễn phí khi mua máy tại TechShop. Ngoài ra còn có dịch vụ sửa chữa, vệ sinh máy, thay pin có tính phí."
+    }
+  ]
+}

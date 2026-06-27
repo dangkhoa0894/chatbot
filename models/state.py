@@ -20,3 +20,6 @@ class ChatState(TypedDict):
     escalation_requested: bool           # True once session has been escalated
     escalation_reason: str               # why escalation was triggered
     stuck_count: int                     # consecutive turns with same intent (loop detector)
+    csat_sent: bool                      # True once CSAT prompt has been shown this session
+    tools_data: Dict[str, Any]           # real-time tool results (inventory, order status, promos)
+    sentiment: str                       # 'positive' | 'neutral' | 'negative'

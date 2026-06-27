@@ -79,6 +79,10 @@
         setSendEnabled(true);
         break;
 
+      case 'csat_prompt':
+        showCsatWidget(data.context, data.turn_count);
+        break;
+
       case 'error':
         hideTyping();
         clearStream();
@@ -312,6 +316,53 @@
       .replace(/━+/g, '<hr style="border-color:#e2e8f0;margin:6px 0">')
       .replace(/\n/g, '<br>');
   }
+
+  // ── CSAT widget ───────────────────────────────────────────────────────────
+  let _csatSessionId = null;
+  let _csatTurnCount = 0;
+  let _csatContext = '';
+  let _csatSubmitted = false;
+
+  function showCsatWidget(context, turnCount) {
+    if (_csatSubmitted) return;
+    _csatContext = context;
+    _csatTurnCount = turnCount;
+
+    const widget = document.createElement('div');
+    widget.id = 'csat-widget';
+    widget.className = 'csat-widget';
+    widget.innerHTML = `
+      <div class="csat-title">Bạn hài lòng với trải nghiệm không?</div>
+      <div class="csat-buttons">
+        <button class="csat-btn csat-yes" onclick="submitCsat(5)">👍 Hài lòng</button>
+        <button class="csat-btn csat-no" onclick="submitCsat(1)">👎 Chưa hài lòng</button>
+      </div>
+      <button class="csat-skip" onclick="dismissCsat()">Bỏ qua</button>`;
+    messagesEl.appendChild(widget);
+    scrollBottom();
+  }
+
+  window.submitCsat = async function(rating) {
+    if (_csatSubmitted) return;
+    _csatSubmitted = true;
+    const widget = document.getElementById('csat-widget');
+    if (widget) {
+      widget.innerHTML = `<div class="csat-thanks">${rating === 5 ? '🙏 Cảm ơn bạn đã đánh giá!' : '🙏 Cảm ơn! Chúng tôi sẽ cải thiện.'}</div>`;
+      setTimeout(() => widget.remove(), 3000);
+    }
+    try {
+      await fetch('/api/csat', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ session_id: sessionId, rating, context: _csatContext, turn_count: _csatTurnCount })
+      });
+    } catch(e) { /* best-effort */ }
+  };
+
+  window.dismissCsat = function() {
+    _csatSubmitted = true;
+    document.getElementById('csat-widget')?.remove();
+  };
 
   // ── Event listeners ────────────────────────────────────────────────────────
   sendBtn.addEventListener('click', () => send());

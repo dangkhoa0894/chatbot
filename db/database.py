@@ -62,6 +62,17 @@ def init_db() -> None:
             CREATE INDEX IF NOT EXISTS idx_token_logs_agent   ON token_logs(agent);
             CREATE INDEX IF NOT EXISTS idx_escalations_ts     ON escalations(ts);
             CREATE INDEX IF NOT EXISTS idx_escalations_reason ON escalations(reason);
+
+            CREATE TABLE IF NOT EXISTS csat_ratings (
+                id         INTEGER PRIMARY KEY AUTOINCREMENT,
+                ts         TEXT    NOT NULL,
+                session_id TEXT    NOT NULL,
+                rating     INTEGER NOT NULL,
+                comment    TEXT    DEFAULT '',
+                context    TEXT    DEFAULT '',
+                turn_count INTEGER DEFAULT 0
+            );
+            CREATE INDEX IF NOT EXISTS idx_csat_ts ON csat_ratings(ts);
         """)
 
 
@@ -264,6 +275,34 @@ def upsert_product(p: dict) -> None:
 def delete_product(product_id: str) -> None:
     with _conn() as c:
         c.execute("UPDATE products SET active = 0 WHERE id = ?", (product_id,))
+
+
+def log_csat(session_id: str, rating: int, comment: str = "", context: str = "", turn_count: int = 0) -> None:
+    ts = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+    with _conn() as c:
+        c.execute(
+            "INSERT INTO csat_ratings (ts, session_id, rating, comment, context, turn_count) VALUES (?,?,?,?,?,?)",
+            (ts, session_id, rating, comment, context, turn_count),
+        )
+
+
+def get_csat_stats(days: int = 7) -> dict:
+    with _conn() as c:
+        window = f"-{days} days"
+        rows = c.execute(
+            "SELECT rating, COUNT(*) n FROM csat_ratings WHERE ts >= datetime('now', ?) GROUP BY rating",
+            (window,),
+        ).fetchall()
+        total = sum(r[1] for r in rows)
+        weighted = sum(r[0] * r[1] for r in rows)
+        avg = round(weighted / total, 2) if total else 0
+        pos = sum(r[1] for r in rows if r[0] >= 4)
+        return {
+            "total": total,
+            "avg_rating": avg,
+            "positive_rate": round(pos / total * 100, 1) if total else 0,
+            "by_rating": {str(r[0]): r[1] for r in rows},
+        }
 
 
 def seed_products_if_empty(products: list[dict]) -> None:

@@ -171,6 +171,14 @@ def remove_product(product_id: str, authorization: str = Header(None)):
     return {"id": product_id, "status": "deleted"}
 
 
+# ── CSAT ──────────────────────────────────────────────────────────────────────
+@router.get("/csat")
+def csat_stats(days: int = 7, authorization: str = Header(None)):
+    _auth(authorization)
+    from db.database import get_csat_stats
+    return get_csat_stats(days)
+
+
 # ── Escalations ────────────────────────────────────────────────────────────────
 @router.get("/escalations")
 def list_escalations(

@@ -506,6 +506,25 @@ canvas{display:block;width:100%;height:160px}
           </div>
         </div>
 
+        <!-- CSAT stats -->
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:16px">
+          <div class="stat-card green">
+            <div class="stat-label">CSAT Score</div>
+            <div class="stat-value" id="m-csat-avg">—</div>
+            <div class="stat-sub" id="m-csat-total">— đánh giá</div>
+          </div>
+          <div class="stat-card blue">
+            <div class="stat-label">Positive Rate</div>
+            <div class="stat-value" id="m-csat-pos">—</div>
+            <div class="stat-sub">Hài lòng / tổng</div>
+          </div>
+          <div class="stat-card green">
+            <div class="stat-label">Positive Sentiment</div>
+            <div class="stat-value" id="m-sent-pos">—</div>
+            <div class="stat-sub" id="m-sent-detail">+0 / ~0 / -0</div>
+          </div>
+        </div>
+
         <!-- Row 4: Intent distribution + Sessions sparkline -->
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
           <div class="table-panel">
@@ -1166,6 +1185,18 @@ async function loadMetrics() {
 
     renderIntentTable(d.intent_distribution, d.total_turns);
     renderSessionsChart(d.sessions_over_time, parseInt(hours));
+
+    // Sentiment stats (from metrics endpoint)
+    document.getElementById('m-sent-pos').textContent = (d.positive_sentiment_rate ?? 0) + '%';
+    const sd = d.sentiment_distribution || {};
+    document.getElementById('m-sent-detail').textContent = `+${sd.positive||0} / ~${sd.neutral||0} / -${sd.negative||0}`;
+
+    // Load CSAT stats
+    fetch(`/admin/api/csat?days=${hours}`, {headers: auth()}).then(r => r.json()).then(d => {
+      document.getElementById('m-csat-avg').textContent = d.avg_rating ? d.avg_rating + '/5' : '—';
+      document.getElementById('m-csat-pos').textContent = (d.positive_rate ?? 0) + '%';
+      document.getElementById('m-csat-total').textContent = `${d.total ?? 0} đánh giá`;
+    }).catch(() => {});
   } catch(e) {
     showError('metrics-error', e.message);
   }

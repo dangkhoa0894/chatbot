@@ -3,6 +3,7 @@ from fastapi import FastAPI, WebSocket
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel as _BM
 
 from channels.websocket_handler import websocket_endpoint
 from channels.messenger_handler import router as messenger_router
@@ -88,6 +89,24 @@ async def session_state(session_id: str):
 async def end_session(session_id: str):
     await clear_session(session_id)
     return {"status": "cleared"}
+
+
+# ── CSAT ──────────────────────────────────────────────────────────────────────
+class CsatPayload(_BM):
+    session_id: str
+    rating: int  # 1 or 5
+    comment: str = ""
+    context: str = ""
+    turn_count: int = 0
+
+
+@app.post("/api/csat", tags=["CSAT"])
+async def submit_csat(body: CsatPayload):
+    from db.database import log_csat
+    if body.rating not in (1, 5):
+        return JSONResponse({"error": "rating must be 1 or 5"}, status_code=400)
+    log_csat(body.session_id, body.rating, body.comment, body.context, body.turn_count)
+    return {"status": "ok"}
 
 
 # ── Health ─────────────────────────────────────────────────────────────────────

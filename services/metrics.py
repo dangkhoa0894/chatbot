@@ -26,6 +26,7 @@ class SessionMetrics:
     injection_attempts: int = 0   # prompt injection attempts
     escalated: bool = False        # whether session was escalated to human
     escalation_reason: str = ""
+    sentiments: list = field(default_factory=list)
 
 
 class MetricsStore:
@@ -92,6 +93,9 @@ class MetricsStore:
             s.escalated = True
             s.escalation_reason = reason
 
+    def record_sentiment(self, session_id: str, sentiment: str):
+        self._get_or_create(session_id).sentiments.append(sentiment)
+
     # ── Aggregation ──────────────────────────────────────────────────────────
     def get_active_count(self) -> int:
         return sum(1 for s in self._sessions.values() if not s.ended)
@@ -118,6 +122,13 @@ class MetricsStore:
                 "ttft_avg_ms": 0,
                 "intent_distribution": {},
                 "sessions_over_time": [],
+                "oos_turns": 0,
+                "oos_rate": 0.0,
+                "injection_attempts": 0,
+                "escalated_sessions": 0,
+                "escalation_rate": 0.0,
+                "sentiment_distribution": {"positive": 0, "negative": 0, "neutral": 0},
+                "positive_sentiment_rate": 0.0,
             }
 
         orders = sum(1 for s in sessions if s.order_placed)
@@ -135,6 +146,12 @@ class MetricsStore:
         for s in sessions:
             for intent in s.intents:
                 intent_dist[intent] += 1
+
+        all_sentiments = [s for sess in sessions for s in sess.sentiments]
+        pos_count = all_sentiments.count('positive')
+        neg_count = all_sentiments.count('negative')
+        neutral_count = all_sentiments.count('neutral')
+        total_sent = len(all_sentiments) or 1
 
         return {
             "period_hours": hours,
@@ -159,6 +176,8 @@ class MetricsStore:
             "injection_attempts": total_injections,
             "escalated_sessions": total_escalated,
             "escalation_rate": round(total_escalated / max(total, 1) * 100, 1),
+            "sentiment_distribution": {"positive": pos_count, "negative": neg_count, "neutral": neutral_count},
+            "positive_sentiment_rate": round(pos_count / total_sent * 100, 1),
         }
 
     def _get_or_create(self, session_id: str) -> SessionMetrics:
