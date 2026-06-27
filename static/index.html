@@ -13,15 +13,28 @@
   <!-- Header -->
   <div class="chat-header">
     <div class="header-left">
-      <div class="bot-avatar">🤖</div>
+      <div class="bot-avatar">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z" fill="currentColor" opacity="0.3"/>
+          <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <path d="M9 9h2v6H9zM13 9h2v6h-2z" fill="currentColor"/>
+        </svg>
+      </div>
       <div>
         <div class="bot-name">TechShop AI</div>
-        <div class="bot-tagline"><span class="status-dot"></span> Tư vấn mua sắm thông minh</div>
+        <div class="bot-status"><span class="status-dot"></span> Trực tuyến</div>
       </div>
     </div>
     <div class="header-right">
       <span class="session-label" id="session-label"></span>
-      <button class="clear-btn" onclick="clearSession()">🗑 Xoá chat</button>
+      <button class="icon-btn" onclick="clearSession()" title="Xoá hội thoại">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="3 6 5 6 21 6"/>
+          <path d="M19 6l-1 14H6L5 6"/>
+          <path d="M10 11v6M14 11v6"/>
+          <path d="M9 6V4h6v2"/>
+        </svg>
+      </button>
     </div>
   </div>
 
@@ -33,21 +46,21 @@
 
   <!-- Input area -->
   <div class="chat-input-area">
-    <div class="quick-replies">
-      <button class="quick-btn" onclick="send('Xin chào!')">👋 Chào</button>
-      <button class="quick-btn" onclick="send('Tôi cần mua laptop để lập trình')">💻 Laptop lập trình</button>
-      <button class="quick-btn" onclick="send('Điện thoại chụp ảnh đẹp dưới 15 triệu')">📱 Phone chụp ảnh</button>
-      <button class="quick-btn" onclick="send('Máy tính bảng để vẽ và học tập')">📟 Máy tính bảng</button>
-      <button class="quick-btn" onclick="send('Laptop gaming mạnh tầm 30-35 triệu')">🎮 Laptop gaming</button>
-    </div>
-    <div class="input-row">
-      <input
-        type="text" id="msg-input"
-        placeholder="Nhập tin nhắn... (VD: Laptop lập trình dưới 40 triệu)"
+    <div class="input-box">
+      <textarea
+        id="msg-input"
+        placeholder="Nhập tin nhắn..."
+        rows="1"
         autocomplete="off"
-      />
-      <button id="send-btn" title="Gửi">➤</button>
+      ></textarea>
+      <button id="send-btn" title="Gửi">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+          <path d="M22 2L11 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M22 2L15 22 11 13 2 9l20-7z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
     </div>
+    <div class="input-hint">Nhấn Enter để gửi · Shift+Enter xuống dòng</div>
   </div>
 
 </div>

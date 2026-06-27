@@ -7,23 +7,31 @@
   let reconnectAttempts = 0;
   const MAX_RECONNECT = 5;
 
+  const BOT_SVG = `<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 100 20A10 10 0 0012 2zm-1 13H9V9h2v6zm4 0h-2V9h2v6z"/></svg>`;
+
   // DOM refs
   const messagesEl = document.getElementById('chat-messages');
-  const inputEl = document.getElementById('msg-input');
-  const sendBtn = document.getElementById('send-btn');
+  const inputEl    = document.getElementById('msg-input');
+  const sendBtn    = document.getElementById('send-btn');
   const sessionLabel = document.getElementById('session-label');
-  const connBanner = document.getElementById('conn-banner');
+  const connBanner   = document.getElementById('conn-banner');
+
+  // ── Textarea auto-resize ───────────────────────────────────────────────────
+  inputEl.addEventListener('input', () => {
+    inputEl.style.height = 'auto';
+    inputEl.style.height = Math.min(inputEl.scrollHeight, 140) + 'px';
+  });
 
   // ── WebSocket ──────────────────────────────────────────────────────────────
   function connect() {
     const protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-    const savedId = localStorage.getItem(SESSION_KEY) || '';
+    const savedId  = localStorage.getItem(SESSION_KEY) || '';
     const url = savedId
       ? `${protocol}://${location.host}/ws?session_id=${encodeURIComponent(savedId)}`
       : `${protocol}://${location.host}/ws`;
 
     ws = new WebSocket(url);
-    setBanner('connecting', '🔄 Đang kết nối...');
+    setBanner('connecting', 'Đang kết nối...');
 
     ws.onopen = () => {
       reconnectAttempts = 0;
@@ -42,10 +50,10 @@
       if (reconnectAttempts < MAX_RECONNECT) {
         const delay = Math.min(1000 * 2 ** reconnectAttempts, 15000);
         reconnectAttempts++;
-        setBanner('disconnected', `❌ Mất kết nối — thử lại sau ${Math.round(delay/1000)}s...`);
+        setBanner('disconnected', `Mất kết nối — thử lại sau ${Math.round(delay / 1000)}s...`);
         setTimeout(connect, delay);
       } else {
-        setBanner('disconnected', '❌ Không thể kết nối. Hãy tải lại trang.');
+        setBanner('disconnected', 'Không thể kết nối. Hãy tải lại trang.');
       }
     };
 
@@ -57,7 +65,7 @@
       case 'connected':
         sessionId = data.session_id;
         localStorage.setItem(SESSION_KEY, sessionId);
-        sessionLabel.textContent = `Session: ${sessionId.slice(0, 8)}`;
+        sessionLabel.textContent = sessionId.slice(0, 8);
 
         if (data.resumed && data.history?.length) {
           renderHistory(data.history);
@@ -94,9 +102,10 @@
 
   // ── Send ───────────────────────────────────────────────────────────────────
   function send(text) {
-    text = (text || inputEl.value).trim();
+    text = (text !== undefined ? text : inputEl.value).trim();
     if (!text || !ws || ws.readyState !== WebSocket.OPEN || sendBtn.disabled) return;
     inputEl.value = '';
+    inputEl.style.height = 'auto';
     appendUserMessage(text);
     setSendEnabled(false);
     ws.send(JSON.stringify({ message: text }));
@@ -104,25 +113,23 @@
 
   window.send = send;
 
-  // ── Render helpers ────────────────────────────────────────────────────────
+  // ── Render helpers ─────────────────────────────────────────────────────────
   function appendUserMessage(text) {
     const el = document.createElement('div');
     el.className = 'message user';
-    el.innerHTML = `
-      <div class="msg-avatar">🧑</div>
-      <div class="bubble">${escHtml(text)}</div>`;
+    el.innerHTML = `<div class="bubble">${escHtml(text)}</div>`;
     messagesEl.appendChild(el);
     scrollBottom();
   }
 
   function appendBotMessage(text, meta) {
     const wrap = document.createElement('div');
-    wrap.style.cssText = 'display:flex;flex-direction:column;gap:8px;align-self:flex-start;animation:fadeIn 0.25s ease';
+    wrap.style.cssText = 'display:flex;flex-direction:column;gap:8px;align-self:flex-start;animation:fadeSlide 0.2s ease;max-width:85%';
 
     const el = document.createElement('div');
     el.className = 'message bot';
     el.innerHTML = `
-      <div class="msg-avatar">🤖</div>
+      <div class="msg-avatar">${BOT_SVG}</div>
       <div class="bubble">${formatText(text)}</div>`;
     wrap.appendChild(el);
 
@@ -133,29 +140,27 @@
     scrollBottom();
   }
 
-  // Render message history returned on session resume (no animation, no product cards)
   function renderHistory(history) {
     history.forEach(msg => {
       if (msg.role === 'user') {
         const el = document.createElement('div');
         el.className = 'message user';
-        el.innerHTML = `<div class="msg-avatar">🧑</div><div class="bubble">${escHtml(msg.content)}</div>`;
+        el.innerHTML = `<div class="bubble">${escHtml(msg.content)}</div>`;
         messagesEl.appendChild(el);
       } else if (msg.role === 'assistant') {
         const wrap = document.createElement('div');
-        wrap.style.cssText = 'display:flex;flex-direction:column;gap:8px;align-self:flex-start';
+        wrap.style.cssText = 'display:flex;flex-direction:column;gap:8px;align-self:flex-start;max-width:85%';
         const el = document.createElement('div');
         el.className = 'message bot';
-        el.innerHTML = `<div class="msg-avatar">🤖</div><div class="bubble">${formatText(msg.content)}</div>`;
+        el.innerHTML = `<div class="msg-avatar">${BOT_SVG}</div><div class="bubble">${formatText(msg.content)}</div>`;
         wrap.appendChild(el);
         messagesEl.appendChild(wrap);
       }
     });
 
-    // Divider so user knows what's old vs new
     const divider = document.createElement('div');
-    divider.style.cssText = 'text-align:center;font-size:11px;color:#94a3b8;padding:4px 0;user-select:none';
-    divider.textContent = '— Hội thoại đã được khôi phục —';
+    divider.className = 'history-divider';
+    divider.textContent = 'Hội thoại đã được khôi phục';
     messagesEl.appendChild(divider);
 
     scrollBottom();
@@ -166,15 +171,15 @@
     grid.className = 'product-cards';
 
     products.forEach((p, idx) => {
-      const cat = detectCategory(p);
+      const cat  = detectCategory(p);
       const card = document.createElement('div');
       card.className = 'product-card';
       card.innerHTML = `
         <div class="card-emoji">${EMOJI[cat] || EMOJI.default}</div>
         <div class="card-name">${escHtml(p.name)}</div>
         <div class="card-price">${escHtml(p.price_display)}</div>
-        <div class="card-rating">⭐ ${p.rating} | 🏪 Còn ${p.stock} cái</div>
-        ${idx === 0 ? '<span class="card-badge">🏆 Đề xuất</span>' : ''}`;
+        <div class="card-rating">⭐ ${p.rating} · Còn ${p.stock}</div>
+        ${idx === 0 ? '<span class="card-badge">Đề xuất</span>' : ''}`;
       card.onclick = () => send(`Cho tôi biết thêm về ${p.name}`);
       grid.appendChild(card);
     });
@@ -186,10 +191,10 @@
     const div = document.createElement('div');
     div.className = 'order-card';
     div.innerHTML = `
-      <h3>🎉 ĐẶT HÀNG THÀNH CÔNG!</h3>
-      <div class="order-row">🆔 Mã đơn: <span class="order-id">#${escHtml(order.order_id || '')}</span></div>
+      <h3>🎉 Đặt hàng thành công!</h3>
+      <div class="order-row">Mã đơn: <span class="order-id">#${escHtml(order.order_id || '')}</span></div>
       <div class="order-row">📍 Giao đến: ${escHtml(order.address || '')}</div>
-      <div class="order-row">📅 Dự kiến: 2-3 ngày làm việc</div>
+      <div class="order-row">📅 Dự kiến: 2–3 ngày làm việc</div>
       <div class="order-row">💳 Thanh toán: COD khi nhận hàng</div>`;
     return div;
   }
@@ -199,15 +204,16 @@
 
   function showTyping() {
     if (typingEl || streamingWrap) return;
-    typingEl = document.createElement('div');
-    typingEl.className = 'message bot';
-    typingEl.innerHTML = `
-      <div class="msg-avatar">🤖</div>
+    const row = document.createElement('div');
+    row.className = 'message bot';
+    row.innerHTML = `
+      <div class="msg-avatar">${BOT_SVG}</div>
       <div class="typing-bubble">
         <div class="typing-dot"></div>
         <div class="typing-dot"></div>
         <div class="typing-dot"></div>
       </div>`;
+    typingEl = row;
     messagesEl.appendChild(typingEl);
     scrollBottom();
   }
@@ -217,18 +223,18 @@
   }
 
   // ── Streaming ──────────────────────────────────────────────────────────────
-  let streamingWrap = null;
+  let streamingWrap    = null;
   let streamingContent = null;
-  let streamingText = '';
+  let streamingText    = '';
 
   function handleStreamToken(delta) {
     hideTyping();
     if (!streamingWrap) {
       streamingWrap = document.createElement('div');
-      streamingWrap.style.cssText = 'display:flex;flex-direction:column;gap:8px;align-self:flex-start;animation:fadeIn 0.25s ease';
+      streamingWrap.style.cssText = 'display:flex;flex-direction:column;gap:8px;align-self:flex-start;animation:fadeSlide 0.2s ease;max-width:85%';
       const el = document.createElement('div');
       el.className = 'message bot';
-      el.innerHTML = '<div class="msg-avatar">🤖</div><div class="bubble"><span class="stream-text"></span><span class="stream-cursor">▍</span></div>';
+      el.innerHTML = `<div class="msg-avatar">${BOT_SVG}</div><div class="bubble"><span class="stream-text"></span><span class="stream-cursor">▍</span></div>`;
       streamingWrap.appendChild(el);
       messagesEl.appendChild(streamingWrap);
       streamingContent = el.querySelector('.stream-text');
@@ -267,45 +273,37 @@
     setTimeout(connect, 200);
   };
 
-  // ── Utilities ─────────────────────────────────────────────────────────────
+  // ── Utilities ──────────────────────────────────────────────────────────────
   function scrollBottom() {
-    requestAnimationFrame(() => {
-      messagesEl.scrollTop = messagesEl.scrollHeight;
-    });
+    requestAnimationFrame(() => { messagesEl.scrollTop = messagesEl.scrollHeight; });
   }
 
   function setSendEnabled(enabled) {
-    sendBtn.disabled = !enabled;
-    inputEl.disabled = !enabled;
-    sendBtn.innerHTML = enabled ? '➤' : '<span class="btn-spinner"></span>';
-    document.querySelectorAll('.quick-btn').forEach(b => b.disabled = !enabled);
+    sendBtn.disabled  = !enabled;
+    inputEl.disabled  = !enabled;
+    sendBtn.innerHTML = enabled
+      ? `<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M22 2L11 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M22 2L15 22 11 13 2 9l20-7z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`
+      : '<span class="btn-spinner"></span>';
   }
 
   function setBanner(type, text) {
-    if (!type) {
-      connBanner.className = 'conn-banner';
-      connBanner.textContent = '';
-      return;
-    }
+    if (!type) { connBanner.className = 'conn-banner'; connBanner.textContent = ''; return; }
     connBanner.className = `conn-banner show ${type}`;
     connBanner.textContent = text;
   }
 
   function detectCategory(product) {
-    const name = (product.name || '').toLowerCase();
-    if (name.includes('macbook') || name.includes('laptop') || name.includes('thinkpad') ||
-        name.includes('dell') || name.includes('asus') || name.includes('hp ') ||
-        name.includes('acer')) return 'laptop';
-    if (name.includes('ipad') || name.includes('tab') || name.includes('pad')) return 'tablet';
+    const n = (product.name || '').toLowerCase();
+    if (n.includes('macbook') || n.includes('laptop') || n.includes('thinkpad') ||
+        n.includes('dell') || n.includes('asus') || n.includes('hp ') || n.includes('acer')) return 'laptop';
+    if (n.includes('ipad') || n.includes('tab') || n.includes('pad')) return 'tablet';
     return 'phone';
   }
 
   function escHtml(s) {
     return String(s)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;');
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
   function formatText(text) {
@@ -313,19 +311,18 @@
       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
       .replace(/\*(.*?)\*/g, '<em>$1</em>')
       .replace(/`(.*?)`/g, '<code>$1</code>')
-      .replace(/━+/g, '<hr style="border-color:#e2e8f0;margin:6px 0">')
+      .replace(/━+/g, '<hr style="border:none;border-top:1px solid #e4e4e7;margin:8px 0">')
       .replace(/\n/g, '<br>');
   }
 
   // ── CSAT widget ───────────────────────────────────────────────────────────
-  let _csatSessionId = null;
+  let _csatContext   = '';
   let _csatTurnCount = 0;
-  let _csatContext = '';
   let _csatSubmitted = false;
 
   function showCsatWidget(context, turnCount) {
     if (_csatSubmitted) return;
-    _csatContext = context;
+    _csatContext   = context;
     _csatTurnCount = turnCount;
 
     const widget = document.createElement('div');
@@ -334,8 +331,8 @@
     widget.innerHTML = `
       <div class="csat-title">Bạn hài lòng với trải nghiệm không?</div>
       <div class="csat-buttons">
-        <button class="csat-btn csat-yes" onclick="submitCsat(5)">👍 Hài lòng</button>
-        <button class="csat-btn csat-no" onclick="submitCsat(1)">👎 Chưa hài lòng</button>
+        <button class="csat-btn" onclick="submitCsat(5)">👍 Hài lòng</button>
+        <button class="csat-btn" onclick="submitCsat(1)">👎 Chưa hài lòng</button>
       </div>
       <button class="csat-skip" onclick="dismissCsat()">Bỏ qua</button>`;
     messagesEl.appendChild(widget);
@@ -353,10 +350,10 @@
     try {
       await fetch('/api/csat', {
         method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ session_id: sessionId, rating, context: _csatContext, turn_count: _csatTurnCount })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ session_id: sessionId, rating, context: _csatContext, turn_count: _csatTurnCount }),
       });
-    } catch(e) { /* best-effort */ }
+    } catch { /* best-effort */ }
   };
 
   window.dismissCsat = function() {
