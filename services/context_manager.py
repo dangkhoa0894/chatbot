@@ -10,8 +10,9 @@ This replaces ad-hoc messages[-4:] slicing scattered across agents with a single
 consistent interface used by every agent that calls an LLM.
 """
 
-WINDOW = 8        # recent messages kept verbatim
-COMPRESS_AT = 14  # trigger rolling compression above this count
+WINDOW = 8           # recent messages kept verbatim
+COMPRESS_AT = 14     # trigger rolling compression above this count
+_MAX_SUMMARY_CHARS = 600  # cap on existing_summary fed back into the summarizer
 
 _SUMMARY_SYSTEM = (
     "Bạn là AI tóm tắt hội thoại bán hàng điện tử. "
@@ -34,6 +35,8 @@ def compress_history(messages: list, existing_summary: str = "") -> tuple[str, l
     Returns (new_summary, trimmed_messages_list).
     Called from orchestrator via run_in_executor (sync-safe).
     On LLM failure: returns (existing_summary, original_messages) unchanged.
+    existing_summary is capped at _MAX_SUMMARY_CHARS before being fed back
+    into the prompt to prevent unbounded growth across many compression cycles.
     """
     from services.llm_client import chat
 
@@ -45,7 +48,13 @@ def compress_history(messages: list, existing_summary: str = "") -> tuple[str, l
         for m in to_summarize
     )
 
-    prefix = f"[Tóm tắt trước đó]:\n{existing_summary}\n\n" if existing_summary else ""
+    # Truncate existing summary to prevent unbounded input growth across many
+    # compression cycles — each cycle appends ~200 chars to the next input.
+    summary_excerpt = (
+        existing_summary[-_MAX_SUMMARY_CHARS:] if len(existing_summary) > _MAX_SUMMARY_CHARS
+        else existing_summary
+    )
+    prefix = f"[Tóm tắt trước đó]:\n{summary_excerpt}\n\n" if summary_excerpt else ""
 
     try:
         new_summary = chat(

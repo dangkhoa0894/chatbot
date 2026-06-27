@@ -92,19 +92,48 @@ async def process_message(
     response = result.get("response") or "Xin lỗi, tôi không hiểu. Bạn có thể nói lại không?"
     final_messages = messages + [{"role": "assistant", "content": response}]
 
-    # ── Rolling compression ───────────────────────────────────────────────────
-    # When history grows long, compress older turns into a summary so the
-    # context window stays small but important facts are never lost.
-    current_summary = result.get("context_summary", "")
-    if should_compress(final_messages):
-        new_summary, final_messages = await loop.run_in_executor(
-            None, compress_history, final_messages, current_summary
-        )
-        result["context_summary"] = new_summary
-
+    # Save immediately so the client can send the next message without waiting
+    # for compression. Compression runs as a best-effort background task.
     result["messages"] = final_messages
     await session_store.save_session(session_id, result)
+
+    if should_compress(final_messages):
+        asyncio.create_task(_bg_compress_and_save(session_id))
+
     return response
+
+
+async def _bg_compress_and_save(session_id: str) -> None:
+    """Compress conversation history in the background after a turn completes.
+
+    Reads the latest session state so any concurrent turn that landed between
+    the trigger and this execution is included in the compression window.
+    Uses a double-read pattern: load → compress → re-read latest → patch only
+    the context fields → save, so no agent state written by a concurrent turn
+    is overwritten.
+    """
+    loop = asyncio.get_event_loop()
+    try:
+        state = await session_store.get_session(session_id)
+        if state is None:
+            return
+        msgs = state.get("messages", [])
+        if not should_compress(msgs):
+            return  # A concurrent turn already compressed
+        old_summary = state.get("context_summary", "")
+        new_summary, trimmed = await loop.run_in_executor(
+            None, compress_history, msgs, old_summary
+        )
+        # Re-read latest state to avoid overwriting fields written by a
+        # concurrent turn that completed while we were compressing.
+        latest = await session_store.get_session(session_id)
+        if latest is None:
+            return
+        latest["context_summary"] = new_summary
+        latest["messages"] = trimmed
+        await session_store.save_session(session_id, latest)
+    except Exception:
+        pass  # Best-effort; next turn will retry if history still exceeds threshold
 
 
 async def get_session_state(session_id: str) -> dict:
