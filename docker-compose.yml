@@ -18,7 +18,7 @@ services:
     ports:
       - "${PORT:-8290}:8290"
     volumes:
-      - ./data:/app/data
+      - chatbot_data:/app/data
     env_file:
       - .env
     environment:
@@ -36,3 +36,4 @@ services:
 
 volumes:
   redis_data:
+  chatbot_data:
