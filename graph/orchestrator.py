@@ -6,12 +6,14 @@ from agents.search_agent import search_node
 from agents.closing_agent import closing_node, general_node
 from services import session_store
 from services.streaming import setup_streaming, clear_streaming
+from services.context_manager import should_compress, compress_history
 
 
 def _default_state(session_id: str) -> ChatState:
     return ChatState(
         session_id=session_id,
         messages=[],
+        context_summary="",
         intent="",
         category=None,
         user_requirements={},
@@ -65,6 +67,10 @@ async def process_message(
     if state is None:
         state = _default_state(session_id)
 
+    # Ensure context_summary exists for sessions created before this field was added
+    if "context_summary" not in state:
+        state["context_summary"] = ""
+
     messages = list(state.get("messages", []))
     messages.append({"role": "user", "content": user_message})
     state["messages"] = messages
@@ -78,14 +84,25 @@ async def process_message(
             return _graph.invoke(state)
         finally:
             clear_streaming()
-            # Push sentinel so the WebSocket streaming loop exits cleanly
             if token_queue is not None:
                 asyncio.run_coroutine_threadsafe(token_queue.put(None), loop)
 
     result: ChatState = await loop.run_in_executor(None, _run_graph)
 
     response = result.get("response") or "Xin lỗi, tôi không hiểu. Bạn có thể nói lại không?"
-    result["messages"] = messages + [{"role": "assistant", "content": response}]
+    final_messages = messages + [{"role": "assistant", "content": response}]
+
+    # ── Rolling compression ───────────────────────────────────────────────────
+    # When history grows long, compress older turns into a summary so the
+    # context window stays small but important facts are never lost.
+    current_summary = result.get("context_summary", "")
+    if should_compress(final_messages):
+        new_summary, final_messages = await loop.run_in_executor(
+            None, compress_history, final_messages, current_summary
+        )
+        result["context_summary"] = new_summary
+
+    result["messages"] = final_messages
     await session_store.save_session(session_id, result)
     return response
 

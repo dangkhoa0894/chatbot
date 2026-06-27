@@ -2,6 +2,7 @@ import uuid
 from models.state import ChatState
 from services.product_service import format_price, format_products_compact
 from services.llm_client import chat
+from services.context_manager import build_messages
 
 _SYSTEM = """Bạn là chuyên gia tư vấn & chốt sale của TechShop AI (laptop, điện thoại, máy tính bảng).
 
@@ -48,17 +49,11 @@ Thông tin: Bảo hành 12 tháng | Đổi trả 7 ngày | Ship miễn phí nộ
 
 
 def closing_node(state: ChatState) -> dict:
-    messages = state.get("messages", [])
     intent = state.get("intent", "general")
     products = state.get("recommended_products", [])
     order_info = state.get("order_info", {})
     is_ready = state.get("is_ready_to_order", False)
     stage = state.get("stage", "")
-
-    context = "\n".join(
-        f"{'Khách' if m['role'] == 'user' else 'Bot'}: {m['content']}"
-        for m in messages[-4:]
-    )
 
     has_address = bool(order_info.get("address"))
 
@@ -106,15 +101,10 @@ def closing_node(state: ChatState) -> dict:
         order_id = uuid.uuid4().hex[:6].upper()
         parts.append(f"[Mã đơn hàng mới]: #ORD-{order_id}")
 
+    situation_block = "[Tình huống hiện tại]:\n" + "\n\n".join(parts)
     try:
         response = chat(
-            messages=[
-                {"role": "system", "content": _SYSTEM},
-                {
-                    "role": "user",
-                    "content": f"Lịch sử hội thoại:\n{context}\n\n" + "\n\n".join(parts),
-                },
-            ],
+            messages=build_messages(state, _SYSTEM, extra_system=situation_block),
             max_tokens=800,
             agent="closing",
             session_id=state.get("session_id", ""),
@@ -141,17 +131,9 @@ def closing_node(state: ChatState) -> dict:
 
 
 def general_node(state: ChatState) -> dict:
-    messages = state.get("messages", [])
-    context = "\n".join(
-        f"{'Khách' if m['role'] == 'user' else 'Bot'}: {m['content']}"
-        for m in messages[-4:]
-    )
     try:
         response = chat(
-            messages=[
-                {"role": "system", "content": _GENERAL_SYSTEM},
-                {"role": "user", "content": context},
-            ],
+            messages=build_messages(state, _GENERAL_SYSTEM),
             max_tokens=500,
             agent="general",
             session_id=state.get("session_id", ""),

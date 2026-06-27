@@ -2,6 +2,7 @@ import json
 import re
 from models.state import ChatState
 from services.llm_client import chat
+from services.context_manager import build_messages
 from services.metrics import metrics as _metrics
 
 # ── Fast-path keyword rules (no LLM call needed) ───────────────────────────────
@@ -12,12 +13,10 @@ _ADDRESS_RE = re.compile(
     re.IGNORECASE,
 )
 
-# Category keywords that unambiguously indicate a product query
 _CAT_LAPTOP  = ['laptop', 'macbook', 'thinkpad', 'surface pro', 'máy tính xách tay']
 _CAT_PHONE   = ['điện thoại', 'iphone', 'smartphone', 'android phone']
 _CAT_TABLET  = ['máy tính bảng', 'ipad', 'galaxy tab', 'tablet']
 
-# Budget pattern: e.g. "dưới 20 triệu", "tầm 30tr", "20-30 triệu"
 _BUDGET_RE = re.compile(r'(\d+(?:[.,]\d+)?)\s*(?:triệu|tr\b)', re.IGNORECASE)
 
 _USE_CASE_MAP = {
@@ -32,24 +31,19 @@ _USE_CASE_MAP = {
 
 
 def _fast_product_intent(text: str) -> dict | None:
-    """Classify product_inquiry and extract requirements via regex. No LLM needed."""
     t = text.lower()
     category = None
     for kw in _CAT_LAPTOP:
-        if kw in t:
-            category = 'laptop'; break
+        if kw in t: category = 'laptop'; break
     if not category:
         for kw in _CAT_PHONE:
-            if kw in t:
-                category = 'phone'; break
+            if kw in t: category = 'phone'; break
     if not category:
         for kw in _CAT_TABLET:
-            if kw in t:
-                category = 'tablet'; break
+            if kw in t: category = 'tablet'; break
     if not category:
         return None
 
-    # Extract budget
     amounts = [float(m.replace(',', '.')) * 1_000_000 for m in _BUDGET_RE.findall(text)]
     budget_max = budget_min = None
     if amounts:
@@ -62,7 +56,6 @@ def _fast_product_intent(text: str) -> dict | None:
         else:
             budget_max = int(amounts[0])
 
-    # Extract use case
     use_case, keywords = None, []
     for kw, uc in _USE_CASE_MAP.items():
         if kw in t:
@@ -74,11 +67,8 @@ def _fast_product_intent(text: str) -> dict | None:
         'intent': 'product_inquiry',
         'category': category,
         'requirements': {
-            'budget_max': budget_max,
-            'budget_min': budget_min,
-            'use_case': use_case,
-            'brand': None,
-            'keywords': keywords,
+            'budget_max': budget_max, 'budget_min': budget_min,
+            'use_case': use_case, 'brand': None, 'keywords': keywords,
         },
         'order_info': {},
         'is_ready_to_order': False,
@@ -87,28 +77,26 @@ def _fast_product_intent(text: str) -> dict | None:
 
 
 def _fast_intent(text: str) -> dict | None:
-    """Return a pre-classified result for obvious cases, else None to fall through to LLM."""
     t = text.lower().strip()
     words = set(re.split(r'\W+', t))
 
-    # Pure greeting with no product keywords
     if words & _GREETING_TRIGGERS and len(text) < 40 and not any(
         k in t for k in ('laptop', 'điện thoại', 'phone', 'tablet', 'máy', 'giá', 'mua')
     ):
         return {'intent': 'greeting', 'category': None, 'requirements': {},
                 'order_info': {}, 'is_ready_to_order': False, 'reasoning': 'fast-path'}
 
-    # Clear street address → order confirmation
     if _ADDRESS_RE.search(text):
         return {'intent': 'order_confirm', 'category': None, 'requirements': {},
                 'order_info': {}, 'is_ready_to_order': True, 'reasoning': 'fast-path address'}
 
-    # Unambiguous product query → skip LLM, extract requirements via regex
     return _fast_product_intent(text)
+
 
 _SYSTEM = """Bạn là AI phân tích ý định khách hàng cho cửa hàng điện tử bán laptop, điện thoại, máy tính bảng.
 
-Phân tích TIN NHẮN CUỐI của khách dựa trên lịch sử hội thoại. Chỉ trả về JSON, không có text khác:
+Phân tích TIN NHẮN CUỐI của khách dựa trên lịch sử hội thoại và thông tin đã ghi nhận.
+Chỉ trả về JSON, không có text khác:
 
 {
   "intent": "product_inquiry" | "order_confirm" | "price_check" | "support" | "greeting" | "general",
@@ -131,13 +119,11 @@ Phân tích TIN NHẮN CUỐI của khách dựa trên lịch sử hội thoại
   "reasoning": "<giải thích ngắn>"
 }
 
-Quy tắc chuyển đổi:
-- "15 triệu" → 15000000, "1.5tr" → 1500000, "dưới 20tr" → budget_max: 20000000
-- "từ 10 triệu" → budget_min: 10000000, "tầm 20-30 triệu" → min: 20000000, max: 30000000
+Quy tắc:
+- "15 triệu" → 15000000, "dưới 20tr" → budget_max: 20000000
+- "tầm 20-30 triệu" → min: 20000000, max: 30000000
 - is_ready_to_order = true khi khách nói "mua", "đặt", "chốt", "lấy cái đó" hoặc cung cấp địa chỉ
-- intent = "order_confirm" khi có địa chỉ giao hàng hoặc xác nhận đặt hàng rõ ràng
-- intent = "product_inquiry" khi hỏi về sản phẩm, tìm kiếm, so sánh
-- intent = "greeting" khi chào hỏi, giới thiệu lần đầu"""
+- Nếu [Thông tin khách hàng đã ghi nhận] có category/budget, kế thừa nếu tin nhắn mới không thay đổi"""
 
 
 def intent_node(state: ChatState) -> dict:
@@ -157,7 +143,7 @@ def intent_node(state: ChatState) -> dict:
         (m["content"] for m in reversed(messages) if m["role"] == "user"), ""
     )
 
-    # Try fast-path first to avoid an unnecessary LLM call
+    # Fast-path: skip LLM for obvious cases
     fast = _fast_intent(last_user)
     if fast:
         _metrics.record_fast_path(state.get("session_id", ""))
@@ -174,24 +160,22 @@ def intent_node(state: ChatState) -> dict:
             "stage": "intent",
         }
 
-    context = "\n".join(
-        f"{'Khách' if m['role'] == 'user' else 'Bot'}: {m['content']}"
-        for m in messages[-6:]
-    )
-
+    # ── LLM path: use hierarchical context (entity memory + summary + recent turns) ──
     _metrics.record_intent_llm(state.get("session_id", ""))
+
+    # build_messages gives us: system (with entities + summary) + recent turns
+    # Append the analysis instruction to the last user message so the model
+    # knows to output JSON rather than continue the conversation naturally.
+    llm_msgs = build_messages(state, _SYSTEM)
+    if llm_msgs and llm_msgs[-1]["role"] == "user":
+        llm_msgs[-1] = {
+            "role": "user",
+            "content": llm_msgs[-1]["content"] + "\n\n[Phân tích tin nhắn trên và trả về JSON]",
+        }
+
     try:
         raw = chat(
-            messages=[
-                {"role": "system", "content": _SYSTEM},
-                {
-                    "role": "user",
-                    "content": (
-                        f"Lịch sử hội thoại:\n{context}\n\n"
-                        f"Phân tích tin nhắn cuối: \"{last_user}\""
-                    ),
-                },
-            ],
+            messages=llm_msgs,
             max_tokens=400,
             agent="intent",
             session_id=state.get("session_id", ""),
