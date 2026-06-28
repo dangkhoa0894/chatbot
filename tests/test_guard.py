@@ -76,8 +76,30 @@ class TestGuardNode:
     def test_in_scope_passes_through(self):
         state = _state(messages=[_msg("cho tôi xem laptop")])
         result = guard_node(state)
-        assert result.get("intent") != "out_of_scope"
-        assert result.get("intent") != "escalation"
+        assert result.get("intent") not in ("out_of_scope", "escalation")
+
+    def test_recovery_after_oos(self):
+        # Previous turn left intent="out_of_scope"; user now asks in-scope
+        state = _state(
+            messages=[_msg("cho tôi xem laptop gaming")],
+            intent="out_of_scope",
+            oos_count=1,
+        )
+        result = guard_node(state)
+        # Must NOT re-route to oos — intent cleared so intent_node re-classifies
+        assert result.get("intent") == ""
+        assert result.get("oos_count") == 1  # counter unchanged (not incremented)
+
+    def test_recovery_after_escalation_state(self):
+        # Previous turn left intent="escalation" but this message is plain in-scope
+        state = _state(
+            messages=[_msg("laptop dưới 20 triệu")],
+            intent="escalation",
+            escalation_reason="repeated_oos",
+        )
+        result = guard_node(state)
+        # Guard sees no OOS/injection, no escalation keyword → should clear intent
+        assert result.get("intent") == ""
 
     def test_oos_off_topic(self):
         state = _state(messages=[_msg("bóng đá hôm nay ai thắng")])

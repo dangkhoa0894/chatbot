@@ -111,7 +111,9 @@ def guard_node(state: ChatState) -> dict:
     # ── OOS + injection check ─────────────────────────────────────────────────
     detected = _detect(last)
     if not detected:
-        return state  # pass through to intent_node
+        # Reset stale intent so _route_after_guard always sends to intent_node,
+        # even when the previous turn left intent="out_of_scope" or "escalation".
+        return {**state, "intent": ""}
 
     oos_type, domain = detected
     oos_count = state.get("oos_count", 0) + 1
