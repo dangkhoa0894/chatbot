@@ -32,9 +32,29 @@ class TestFastAddress:
         assert r is not None and r["intent"] == "order_confirm"
         assert r["is_ready_to_order"] is True
 
+    def test_address_extracted_into_order_info(self):
+        r = _fast_intent("giao đến 123 đường Lê Lợi, quận 1")
+        assert r is not None
+        assert r["order_info"].get("address") is not None
+        assert "đường" in r["order_info"]["address"].lower()
+
+    def test_phone_extracted_alongside_address(self):
+        r = _fast_intent("123 đường Nguyễn Trãi, quận 5 — SĐT 0901234567")
+        assert r is not None and r["intent"] == "order_confirm"
+        assert r["order_info"].get("phone") == "0901234567"
+        assert r["order_info"].get("address") is not None
+
+    def test_phone_without_address_not_captured(self):
+        # Phone alone shouldn't trigger address fast-path
+        r = _fast_intent("số điện thoại của tôi là 0901234567")
+        # Does not match address regex → falls through to LLM or product intent
+        if r:
+            assert r.get("intent") != "order_confirm"
+
     def test_phuong_address(self):
         r = _fast_intent("địa chỉ của tôi là 45 phường Bến Nghé")
         assert r is not None and r["intent"] == "order_confirm"
+        assert r["order_info"].get("address") is not None
 
 
 class TestFastOrderStatus:

@@ -17,6 +17,7 @@ _ADDRESS_RE = re.compile(
     r'\b\d+[\s,/\\]*.{0,30}(đường|phố|phường|quận|huyện|tỉnh|thành phố|tp\.?)\b',
     re.IGNORECASE,
 )
+_PHONE_RE = re.compile(r'\b(0[3-9]\d{8}|\+?84[3-9]\d{8})\b')
 
 _CAT_LAPTOP  = ['laptop', 'macbook', 'thinkpad', 'surface pro', 'máy tính xách tay']
 _CAT_PHONE   = ['điện thoại', 'iphone', 'smartphone', 'android phone']
@@ -95,9 +96,16 @@ def _fast_intent(text: str) -> dict | None:
                 'order_info': {}, 'is_ready_to_order': False, 'sentiment': sentiment,
                 'reasoning': 'fast-path'}
 
-    if _ADDRESS_RE.search(text):
+    addr_match = _ADDRESS_RE.search(text)
+    if addr_match:
+        # Extract from match start to end-of-text so the full address is captured
+        extracted_addr = text[addr_match.start():].strip()[:300]
+        fast_order: dict = {'address': extracted_addr}
+        phone_m = _PHONE_RE.search(text)
+        if phone_m:
+            fast_order['phone'] = phone_m.group()
         return {'intent': 'order_confirm', 'category': None, 'requirements': {},
-                'order_info': {}, 'is_ready_to_order': True, 'sentiment': sentiment,
+                'order_info': fast_order, 'is_ready_to_order': True, 'sentiment': sentiment,
                 'reasoning': 'fast-path address'}
 
     # Order status detection

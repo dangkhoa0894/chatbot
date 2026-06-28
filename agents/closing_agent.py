@@ -19,8 +19,12 @@ Dựa trên ngữ cảnh, sản phẩm và thông tin đặt hàng, thực hiệ
 → Tạo urgency nhẹ: "tồn kho có hạn", "đang được nhiều người quan tâm"
 
 **[C] Khách xác nhận mua** (intent=order_confirm):
-→ Nếu THIẾU địa chỉ → hỏi địa chỉ giao hàng (bắt buộc)
-→ Nếu ĐỦ thông tin (sản phẩm + địa chỉ) → xuất xác nhận đơn hàng:
+→ Kiểm tra [Thông tin đặt hàng] — nếu THIẾU BẤT KỲ trường nào trong 3 trường bắt buộc:
+   • Địa chỉ giao hàng
+   • Tên người nhận
+   • Số điện thoại
+  → Hỏi GỌN trong 1 tin nhắn tất cả các trường còn thiếu (không hỏi từng cái riêng lẻ)
+→ Nếu ĐỦ CẢ 3 (địa chỉ + tên + SĐT) → xuất xác nhận đơn hàng:
 
 🎉 ĐẶT HÀNG THÀNH CÔNG!
 ━━━━━━━━━━━━━━━━━━━━
@@ -61,6 +65,8 @@ def closing_node(state: ChatState) -> dict:
     stage = state.get("stage", "")
 
     has_address = bool(order_info.get("address"))
+    has_name = bool(order_info.get("name"))
+    has_phone = bool(order_info.get("phone"))
 
     # Resolve the product the customer is interested in
     selected = state.get("selected_product")
@@ -77,7 +83,9 @@ def closing_node(state: ChatState) -> dict:
     parts = [
         f"[Stage]: {stage} | [Intent]: {intent} | "
         f"[Sẵn sàng mua]: {'có' if is_ready else 'chưa'} | "
-        f"[Địa chỉ]: {'có' if has_address else 'chưa có'}"
+        f"[Địa chỉ]: {'✓' if has_address else 'THIẾU'} | "
+        f"[Tên]: {'✓' if has_name else 'THIẾU'} | "
+        f"[SĐT]: {'✓' if has_phone else 'THIẾU'}"
     ]
 
     if products:
@@ -139,7 +147,11 @@ def closing_node(state: ChatState) -> dict:
     if kb_chunks:
         parts.append("[Thông tin chính sách liên quan]:\n" + "\n".join(kb_chunks))
 
-    is_confirming = intent == "order_confirm" and has_address and (selected or order_info.get("product_hint"))
+    is_confirming = (
+        intent == "order_confirm"
+        and has_address and has_name and has_phone
+        and (selected or order_info.get("product_hint"))
+    )
     order_id = None
     if is_confirming:
         order_id = uuid.uuid4().hex[:6].upper()
