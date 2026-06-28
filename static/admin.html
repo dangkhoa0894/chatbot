@@ -282,6 +282,30 @@ canvas{display:block;width:100%;height:160px}
 }
 .back-btn{display:none;align-items:center;gap:4px;padding:5px 10px;background:transparent;border:1px solid var(--border);border-radius:6px;color:var(--muted);font-size:12px;cursor:pointer}
 .back-btn:hover{color:var(--text)}
+
+/* ── Session Roadmap ── */
+.session-roadmap{padding:10px 16px 8px;border-bottom:1px solid var(--border);background:rgba(0,0,0,.12);flex-shrink:0}
+.roadmap-track{display:flex;align-items:flex-start;position:relative}
+.roadmap-track::before{content:'';position:absolute;top:13px;left:14px;right:14px;height:2px;background:var(--border);z-index:0}
+.roadmap-step{flex:1;display:flex;flex-direction:column;align-items:center;position:relative;z-index:1}
+.roadmap-dot{width:28px;height:28px;border-radius:50%;border:2px solid var(--border);background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:12px;transition:all .2s;flex-shrink:0}
+.roadmap-step.done .roadmap-dot{border-color:var(--blue);background:var(--blue-dim);color:var(--blue)}
+.roadmap-step.active .roadmap-dot{border-color:var(--blue);background:var(--blue);box-shadow:0 0 0 4px rgba(59,130,246,.18)}
+.roadmap-step.special-oos .roadmap-dot{border-color:var(--amber);background:rgba(245,158,11,.15)}
+.roadmap-step.special-esc .roadmap-dot{border-color:var(--red);background:rgba(239,68,68,.15)}
+.roadmap-label{font-size:9.5px;color:var(--muted);margin-top:5px;text-align:center;white-space:nowrap;line-height:1.3}
+.roadmap-step.done .roadmap-label{color:var(--text)}
+.roadmap-step.active .roadmap-label{color:var(--blue);font-weight:600}
+.roadmap-step.special-oos .roadmap-label{color:var(--amber)}
+.roadmap-step.special-esc .roadmap-label{color:var(--red)}
+.roadmap-connector{flex:1;height:2px;background:var(--border);align-self:center;margin:0;margin-bottom:22px;transition:background .2s;position:relative;z-index:0}
+.roadmap-connector.done{background:var(--blue)}
+.roadmap-chips{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}
+.roadmap-chip{font-size:10.5px;padding:2px 7px;border-radius:10px;background:var(--panel);border:1px solid var(--border);color:var(--muted);white-space:nowrap;line-height:1.6}
+.roadmap-chip.c-blue{border-color:rgba(59,130,246,.4);color:var(--blue)}
+.roadmap-chip.c-green{border-color:rgba(34,197,94,.4);color:var(--green)}
+.roadmap-chip.c-amber{border-color:rgba(245,158,11,.4);color:var(--amber)}
+.roadmap-chip.c-red{border-color:rgba(239,68,68,.4);color:var(--red)}
 </style>
 </head>
 <body>
@@ -651,6 +675,12 @@ canvas{display:block;width:100%;height:160px}
                 <button class="btn btn-ghost btn-sm" onclick="acceptMonitorSession()" id="btn-initiate-session" style="display:none">💬 Tiếp cận</button>
               </div>
             </div>
+            <!-- Customer journey roadmap -->
+            <div class="session-roadmap" id="session-roadmap" style="display:none">
+              <div class="roadmap-track" id="roadmap-track"></div>
+              <div class="roadmap-chips" id="roadmap-chips"></div>
+            </div>
+
             <div class="chat-pane-msgs" id="chat-pane-msgs">
               <div style="text-align:center;color:var(--muted);font-size:13px;padding:24px">Đang tải…</div>
             </div>
@@ -1514,6 +1544,105 @@ async function resolveEsc(id) {
 
 function changeEscPage(dir) { loadEscalations(Math.max(0, escOffset + dir * escLimit)); }
 
+// ── Session Roadmap ───────────────────────────────────────────────────────────
+const _JOURNEY_STEPS = [
+  { icon: '👋', label: 'Chào hỏi'       },
+  { icon: '🔍', label: 'Tìm sản phẩm'  },
+  { icon: '💬', label: 'Đang tư vấn'   },
+  { icon: '🛒', label: 'Chốt đơn'      },
+  { icon: '✅', label: 'Hoàn tất'      },
+];
+
+function _stateToStep(state) {
+  const stage  = (state.stage  || '').toLowerCase();
+  const intent = (state.intent || '').toLowerCase();
+  const oi = state.order_info || {};
+  if (stage === 'confirmed' || oi.order_id)                                        return 4;
+  if (intent === 'order_confirm' || stage === 'closing')                           return 3;
+  if (stage === 'search' || intent === 'product_inquiry' || intent === 'price_check') return 2;
+  if (intent === 'greeting' || stage === 'general' || intent === 'support')        return 1;
+  return 0;
+}
+
+function _renderRoadmap(state) {
+  const roadmapEl = document.getElementById('session-roadmap');
+  const trackEl   = document.getElementById('roadmap-track');
+  const chipsEl   = document.getElementById('roadmap-chips');
+  if (!roadmapEl || !trackEl || !chipsEl) return;
+
+  if (!state || !Object.keys(state).length) { roadmapEl.style.display = 'none'; return; }
+  roadmapEl.style.display = '';
+
+  const intent = (state.intent || '').toLowerCase();
+  const stage  = (state.stage  || '').toLowerCase();
+  const isOos  = intent === 'out_of_scope' || stage === 'oos';
+  const isEsc  = intent === 'escalation'   || stage === 'guard' && state.escalation_reason;
+  const cur    = _stateToStep(state);
+
+  // Build stepper HTML: dot → connector → dot → connector …
+  let html = '';
+  _JOURNEY_STEPS.forEach((s, i) => {
+    let cls = i < cur ? 'done' : i === cur ? 'active' : '';
+    if (i === cur && isOos) cls = 'special-oos';
+    if (i === cur && isEsc) cls = 'special-esc';
+    const dotIcon = i < cur ? '✓' : (i === cur && isOos) ? '⚠️' : (i === cur && isEsc) ? '🆘' : s.icon;
+    html += `<div class="roadmap-step ${cls}"><div class="roadmap-dot">${dotIcon}</div><div class="roadmap-label">${s.label}</div></div>`;
+    if (i < _JOURNEY_STEPS.length - 1)
+      html += `<div class="roadmap-connector ${i < cur ? 'done' : ''}"></div>`;
+  });
+  trackEl.innerHTML = html;
+
+  // Meta chips
+  const chips = [];
+  const req = state.user_requirements || {};
+  const oi  = state.order_info || {};
+  const msgs = (state.messages || []).filter(m => m.role === 'user');
+
+  if (state.category) {
+    const lbl = {laptop:'💻 Laptop', phone:'📱 Điện thoại', tablet:'📱 Tablet'}[state.category] || state.category;
+    chips.push(`<span class="roadmap-chip c-blue">${lbl}</span>`);
+  }
+  if (req.budget_max)  chips.push(`<span class="roadmap-chip">💰 &lt;${(req.budget_max/1e6).toFixed(0)} tr</span>`);
+  else if (req.budget_min) chips.push(`<span class="roadmap-chip">💰 &gt;${(req.budget_min/1e6).toFixed(0)} tr</span>`);
+  if (req.use_case)    chips.push(`<span class="roadmap-chip c-blue">🎯 ${esc(req.use_case)}</span>`);
+
+  const prod = state.selected_product;
+  if (prod) {
+    chips.push(`<span class="roadmap-chip c-green">📦 ${esc(prod.name)}</span>`);
+  } else if ((state.recommended_products || []).length) {
+    chips.push(`<span class="roadmap-chip">${state.recommended_products.length} sản phẩm đề xuất</span>`);
+  }
+
+  if (oi.order_id) {
+    chips.push(`<span class="roadmap-chip c-green">🧾 ${esc(oi.order_id)}</span>`);
+  } else if (intent === 'order_confirm') {
+    const miss = [];
+    if (!oi.address) miss.push('địa chỉ');
+    if (!oi.name)    miss.push('tên');
+    if (!oi.phone)   miss.push('SĐT');
+    if (miss.length) chips.push(`<span class="roadmap-chip c-amber">⚠️ Thiếu ${miss.join(', ')}</span>`);
+  }
+
+  if (isOos)  chips.push(`<span class="roadmap-chip c-amber">⚠️ OOS ×${state.oos_count||1}</span>`);
+  if (isEsc)  chips.push(`<span class="roadmap-chip c-red">🆘 Escalation</span>`);
+
+  const sent = state.sentiment;
+  if (sent === 'negative') chips.push(`<span class="roadmap-chip c-red">😤 Không hài lòng</span>`);
+  else if (sent === 'positive') chips.push(`<span class="roadmap-chip c-green">😊 Hài lòng</span>`);
+
+  if (msgs.length) chips.push(`<span class="roadmap-chip">${msgs.length} lượt</span>`);
+
+  chipsEl.innerHTML = chips.join('');
+}
+
+async function loadSessionRoadmap(sessionId) {
+  try {
+    const r = await fetch(`/admin/api/sessions/${sessionId}/state`, { headers: auth() });
+    if (!r.ok) return;
+    _renderRoadmap(await r.json());
+  } catch(e) {}
+}
+
 // ── Live Monitor ──────────────────────────────────────────────────────────────
 let _monitorSessions = [];
 let _selectedSession = null;
@@ -1588,9 +1717,14 @@ async function selectSession(sessionId) {
   document.getElementById('chat-pane-inner').style.display = 'flex';
   document.getElementById('monitor-wrap').classList.add('chat-open');
 
-  await loadChatHistory(sessionId);
+  await Promise.all([loadChatHistory(sessionId), loadSessionRoadmap(sessionId)]);
   clearInterval(_chatTimer);
-  _chatTimer = setInterval(() => { if (_selectedSession) loadChatHistory(_selectedSession); }, 3000);
+  _chatTimer = setInterval(() => {
+    if (_selectedSession) {
+      loadChatHistory(_selectedSession);
+      loadSessionRoadmap(_selectedSession);
+    }
+  }, 3000);
 }
 
 function _updateChatHeader(sessionId) {
@@ -1628,6 +1762,8 @@ function closeChatPane() {
   document.getElementById('monitor-wrap').classList.remove('chat-open');
   document.getElementById('chat-no-selection').style.display = 'flex';
   document.getElementById('chat-pane-inner').style.display = 'none';
+  const rm = document.getElementById('session-roadmap');
+  if (rm) rm.style.display = 'none';
   renderSessionList(_monitorSessions);
 }
 

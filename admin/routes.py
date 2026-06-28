@@ -369,6 +369,32 @@ async def send_to_session(
     return {"ok": True}
 
 
+@router.get("/sessions/{session_id}/state")
+async def get_session_state_admin(
+    session_id: str,
+    authorization: str = Header(None),
+):
+    _auth(authorization)
+    from services import session_store
+    state = await session_store.get_session(session_id)
+    if state is None:
+        return {}
+    # Return only the fields needed for the roadmap (no full message history)
+    return {
+        "stage":               state.get("stage", ""),
+        "intent":              state.get("intent", ""),
+        "category":            state.get("category"),
+        "sentiment":           state.get("sentiment", "neutral"),
+        "user_requirements":   state.get("user_requirements", {}),
+        "recommended_products": [{"id": p["id"], "name": p["name"]} for p in state.get("recommended_products", [])],
+        "selected_product":    (lambda p: {"id": p["id"], "name": p["name"]} if p else None)(state.get("selected_product")),
+        "order_info":          {k: v for k, v in state.get("order_info", {}).items() if k != "snapshot"},
+        "oos_count":           state.get("oos_count", 0),
+        "escalation_reason":   state.get("escalation_reason", ""),
+        "messages":            [{"role": m["role"]} for m in state.get("messages", [])],
+    }
+
+
 @router.get("/sessions/{session_id}/history")
 async def get_session_history(
     session_id: str,
