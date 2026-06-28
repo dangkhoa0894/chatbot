@@ -315,6 +315,7 @@ canvas{display:block;width:100%;height:160px}
         <span id="monitor-badge" style="display:none;background:var(--red);color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;min-width:18px;text-align:center"></span>
       </div>
       <div class="nav-item" onclick="showTab('products')" id="nav-products">Sản phẩm</div>
+      <div class="nav-item" onclick="showTab('orders')" id="nav-orders">Đơn hàng</div>
       <div class="nav-item" onclick="showTab('logs')" id="nav-logs">Token Logs</div>
       <div class="nav-item" onclick="showTab('metrics')" id="nav-metrics">Metrics</div>
       <div class="nav-item" onclick="showTab('escalations')" id="nav-escalations">Escalations</div>
@@ -564,6 +565,43 @@ canvas{display:block;width:100%;height:160px}
           <span id="esc-count">—</span>
           <button class="btn btn-ghost btn-sm" id="esc-prev" onclick="changeEscPage(-1)" disabled>← Trước</button>
           <button class="btn btn-ghost btn-sm" id="esc-next" onclick="changeEscPage(1)" disabled>Tiếp →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Orders tab ── -->
+    <div id="tab-orders" style="display:none;flex-direction:column;height:100%">
+      <div class="topbar">
+        <h2>Quản lý đơn hàng</h2>
+        <div style="display:flex;gap:8px;align-items:center">
+          <select id="order-status-filter" onchange="loadOrders(0)" style="width:160px">
+            <option value="">Tất cả trạng thái</option>
+            <option value="confirmed">Đã xác nhận</option>
+            <option value="shipped">Đang giao</option>
+            <option value="delivered">Đã giao</option>
+            <option value="cancelled">Đã huỷ</option>
+          </select>
+          <button class="btn btn-ghost" onclick="loadOrders(0)">↻ Refresh</button>
+        </div>
+      </div>
+      <div style="padding:16px;flex:1;overflow:auto">
+        <div class="error-msg" id="orders-error"></div>
+        <div class="table-panel">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Mã đơn</th><th>Thời gian</th><th>Sản phẩm</th>
+                <th>Giá</th><th>Người nhận</th><th>SĐT</th>
+                <th>Địa chỉ</th><th>Thanh toán</th><th>Trạng thái</th>
+              </tr>
+            </thead>
+            <tbody id="orders-table-body"><tr><td colspan="9" class="loading">Loading…</td></tr></tbody>
+          </table>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;margin-top:12px;font-size:13px;color:var(--muted)">
+          <span id="orders-count">—</span>
+          <button class="btn btn-ghost btn-sm" id="orders-prev" onclick="changeOrdersPage(-1)" disabled>← Trước</button>
+          <button class="btn btn-ghost btn-sm" id="orders-next" onclick="changeOrdersPage(1)" disabled>Tiếp →</button>
         </div>
       </div>
     </div>
@@ -969,12 +1007,12 @@ function closeSidebar() {
 
 // ── Tab navigation ────────────────────────────────────────────────────────────
 const _TAB_TITLES = {
-  dashboard: 'Dashboard', products: 'Sản phẩm', logs: 'Token Logs',
-  metrics: 'Metrics', escalations: 'Escalations', config: 'Cấu hình',
-  monitor: 'Hỗ trợ trực tuyến',
+  dashboard: 'Dashboard', products: 'Sản phẩm', orders: 'Đơn hàng',
+  logs: 'Token Logs', metrics: 'Metrics', escalations: 'Escalations',
+  config: 'Cấu hình', monitor: 'Hỗ trợ trực tuyến',
 };
 
-const _ALL_TABS = ['dashboard','products','logs','config','metrics','escalations','monitor'];
+const _ALL_TABS = ['dashboard','products','orders','logs','config','metrics','escalations','monitor'];
 
 function showTab(name) {
   _ALL_TABS.forEach(t => {
@@ -986,6 +1024,7 @@ function showTab(name) {
   document.getElementById('mobile-tab-title').textContent = _TAB_TITLES[name] || name;
   closeSidebar();
   if (name === 'products') loadProducts();
+  if (name === 'orders') loadOrders(0);
   if (name === 'logs') loadLogs(0);
   if (name === 'metrics') loadMetrics();
   if (name === 'config') loadConfig();
@@ -1376,6 +1415,62 @@ const _REASON_LABEL = {
   conversation_loop: 'Vòng lặp hội thoại',
   repeated_oos:      'OOS nhiều lần',
 };
+
+// ── Orders ────────────────────────────────────────────────────────────────────
+let ordersOffset = 0, ordersTotal = 0;
+const ordersLimit = 50;
+const _ORDER_STATUS_LABEL = {
+  confirmed: 'Đã xác nhận', shipped: 'Đang giao',
+  delivered: 'Đã giao', cancelled: 'Đã huỷ',
+};
+const _ORDER_STATUS_CLASS = {
+  confirmed: 'badge-blue', shipped: 'badge-amber',
+  delivered: 'badge-green', cancelled: 'badge-red',
+};
+
+async function loadOrders(offset = 0) {
+  ordersOffset = offset;
+  const status = document.getElementById('order-status-filter').value;
+  const qs = `limit=${ordersLimit}&offset=${offset}` + (status ? `&status=${status}` : '');
+  try {
+    const r = await fetch(`/admin/api/orders?${qs}`, { headers: auth() });
+    if (!r.ok) { showError('orders-error', 'Lỗi tải đơn hàng'); return; }
+    const d = await r.json();
+    ordersTotal = d.total;
+    renderOrders(d.rows);
+    const from = ordersTotal === 0 ? 0 : offset + 1;
+    const to = Math.min(offset + ordersLimit, ordersTotal);
+    document.getElementById('orders-count').textContent = `${from}–${to} / ${ordersTotal} đơn`;
+    document.getElementById('orders-prev').disabled = offset === 0;
+    document.getElementById('orders-next').disabled = offset + ordersLimit >= ordersTotal;
+  } catch(e) { showError('orders-error', e.message); }
+}
+
+function renderOrders(rows) {
+  const tbody = document.getElementById('orders-table-body');
+  if (!rows.length) {
+    tbody.innerHTML = '<tr><td colspan="9"><div class="empty-state"><p>Chưa có đơn hàng nào</p></div></td></tr>';
+    return;
+  }
+  const fmtPrice = v => v ? (v/1e6).toFixed(1).replace(/\.0$/,'') + ' tr' : '—';
+  tbody.innerHTML = rows.map(r => {
+    const st = r.status || 'confirmed';
+    const ts = (r.ts || '').replace('T',' ').slice(0,16);
+    return `<tr>
+      <td class="mono" style="font-size:11px;font-weight:600">${esc(r.id)}</td>
+      <td style="white-space:nowrap;font-size:12px">${ts}</td>
+      <td style="max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${esc(r.product_name)}">${esc(r.product_name)}</td>
+      <td style="white-space:nowrap">${fmtPrice(r.price)}</td>
+      <td>${esc(r.customer_name)||'—'}</td>
+      <td class="mono">${esc(r.customer_phone)||'—'}</td>
+      <td style="max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${esc(r.address)}">${esc(r.address)||'—'}</td>
+      <td>${esc(r.payment_method)||'COD'}</td>
+      <td><span class="badge ${_ORDER_STATUS_CLASS[st]||'badge-slate'}">${_ORDER_STATUS_LABEL[st]||st}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+function changeOrdersPage(dir) { loadOrders(Math.max(0, ordersOffset + dir * ordersLimit)); }
 
 async function loadEscalations(offset = 0) {
   escOffset = offset;

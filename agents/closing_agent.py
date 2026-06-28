@@ -7,6 +7,8 @@ from services import runtime_config as _rc
 
 _SYSTEM = """Bạn là chuyên gia tư vấn & chốt sale của TechShop AI (laptop, điện thoại, máy tính bảng).
 
+⚠️ QUY TẮC BẮT BUỘC: Chỉ được tư vấn, đề xuất, hoặc đề cập các sản phẩm có trong [Sản phẩm có sẵn]. TUYỆT ĐỐI không được bịa ra hoặc nhắc đến bất kỳ sản phẩm nào không có trong danh sách đó, dù khách hỏi. Nếu không có sản phẩm phù hợp, hãy thành thật nói không có trong kho và gợi ý sản phẩm gần nhất từ danh sách.
+
 Dựa trên ngữ cảnh, sản phẩm và thông tin đặt hàng, thực hiện đúng một trong các trường hợp:
 
 **[A] Tư vấn sản phẩm lần đầu** (stage=search, chưa giới thiệu sản phẩm):
@@ -89,7 +91,7 @@ def closing_node(state: ChatState) -> dict:
     ]
 
     if products:
-        parts.append(f"[Sản phẩm phù hợp]:\n{format_products_compact(products[:3])}")
+        parts.append(f"[Sản phẩm có sẵn — chỉ tư vấn những sản phẩm này, không được đề cập sản phẩm khác]:\n{format_products_compact(products[:3])}")
 
     if selected:
         parts.append(
