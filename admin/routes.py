@@ -13,6 +13,7 @@ from db.database import (
     get_token_stats, get_token_logs, get_distinct_agents,
     load_all_products, upsert_product, delete_product,
     get_escalations, resolve_escalation,
+    get_orders,
 )
 from services.product_service import reload_products
 from services import runtime_config as _rc
@@ -267,6 +268,19 @@ def list_escalations(
 ):
     _auth(authorization)
     return get_escalations(limit=limit, offset=offset, resolved=resolved)
+
+
+# ── Orders ────────────────────────────────────────────────────────────────────
+@router.get("/orders")
+def list_orders(
+    limit: int = Query(50, le=200),
+    offset: int = 0,
+    status: Optional[str] = None,
+    session_id: Optional[str] = None,
+    authorization: str = Header(None),
+):
+    _auth(authorization)
+    return get_orders(limit=limit, offset=offset, status=status, session_id=session_id)
 
 
 @router.patch("/escalations/{escalation_id}/resolve")

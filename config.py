@@ -26,7 +26,7 @@ class Settings:
 
     ADMIN_TOKEN: str = os.getenv("ADMIN_TOKEN", "")
     ADMIN_USERNAME: str = os.getenv("ADMIN_USERNAME", "admin")
-    ADMIN_PASSWORD: str = os.getenv("ADMIN_PASSWORD", "Admin@2026")
+    ADMIN_PASSWORD: str = os.getenv("ADMIN_PASSWORD", "")
 
     DB_PATH: str = os.getenv("DB_PATH", "data/chatbot.db")
 

@@ -79,6 +79,23 @@ def init_db() -> None:
             CREATE INDEX IF NOT EXISTS idx_escalations_session_id ON escalations(session_id);
             CREATE INDEX IF NOT EXISTS idx_escalations_resolved ON escalations(resolved);
             CREATE INDEX IF NOT EXISTS idx_csat_session_id ON csat_ratings(session_id);
+
+            CREATE TABLE IF NOT EXISTS orders (
+                id              TEXT    PRIMARY KEY,
+                ts              TEXT    NOT NULL,
+                session_id      TEXT    NOT NULL,
+                product_id      TEXT    NOT NULL,
+                product_name    TEXT    NOT NULL,
+                price           INTEGER NOT NULL,
+                customer_name   TEXT    DEFAULT '',
+                customer_phone  TEXT    DEFAULT '',
+                address         TEXT    NOT NULL,
+                status          TEXT    DEFAULT 'confirmed',
+                payment_method  TEXT    DEFAULT 'COD'
+            );
+            CREATE INDEX IF NOT EXISTS idx_orders_ts         ON orders(ts);
+            CREATE INDEX IF NOT EXISTS idx_orders_session_id ON orders(session_id);
+            CREATE INDEX IF NOT EXISTS idx_orders_status     ON orders(status);
         """)
 
 
@@ -326,6 +343,58 @@ def get_csat_stats(days: int = 7) -> dict:
             "positive_rate": round(pos / total * 100, 1) if total else 0,
             "by_rating": {str(r[0]): r[1] for r in rows},
         }
+
+
+# ── Orders ─────────────────────────────────────────────────────────────────────
+def create_order(
+    order_id: str,
+    session_id: str,
+    product_id: str,
+    product_name: str,
+    price: int,
+    address: str,
+    customer_name: str = "",
+    customer_phone: str = "",
+    payment_method: str = "COD",
+) -> None:
+    ts = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+    with _conn() as c:
+        c.execute(
+            "INSERT OR IGNORE INTO orders"
+            " (id, ts, session_id, product_id, product_name, price,"
+            "  customer_name, customer_phone, address, payment_method)"
+            " VALUES (?,?,?,?,?,?,?,?,?,?)",
+            (order_id, ts, session_id, product_id, product_name, price,
+             customer_name, customer_phone, address, payment_method),
+        )
+        # Decrement stock atomically; floor at 0 to avoid negative stock
+        c.execute(
+            "UPDATE products SET stock = MAX(0, stock - 1) WHERE id = ?",
+            (product_id,),
+        )
+
+
+def get_orders(
+    limit: int = 50,
+    offset: int = 0,
+    status: str | None = None,
+    session_id: str | None = None,
+) -> dict:
+    conditions, params = [], []
+    if status:
+        conditions.append("status = ?")
+        params.append(status)
+    if session_id:
+        conditions.append("session_id = ?")
+        params.append(session_id)
+    where = ("WHERE " + " AND ".join(conditions)) if conditions else ""
+    with _conn() as c:
+        total = c.execute(f"SELECT COUNT(*) FROM orders {where}", params).fetchone()[0]
+        rows = c.execute(
+            f"SELECT * FROM orders {where} ORDER BY ts DESC LIMIT ? OFFSET ?",
+            params + [limit, offset],
+        ).fetchall()
+    return {"total": total, "rows": [dict(r) for r in rows]}
 
 
 def seed_products_if_empty(products: list[dict]) -> None:

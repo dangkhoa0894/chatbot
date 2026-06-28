@@ -169,11 +169,28 @@ def closing_node(state: ChatState) -> dict:
     if selected:
         new_state["selected_product"] = selected
     if is_confirming and order_id:
+        full_order_id = f"ORD-{order_id}"
         new_state["order_info"] = {
             **order_info,
-            "order_id": f"ORD-{order_id}",
+            "order_id": full_order_id,
             "status": "confirmed",
         }
+        # Persist to DB and decrement stock
+        try:
+            from db.database import create_order as _create_order
+            _create_order(
+                order_id=full_order_id,
+                session_id=state.get("session_id", ""),
+                product_id=selected["id"] if selected else "",
+                product_name=selected["name"] if selected else order_info.get("product_hint", ""),
+                price=int(selected["price"]) if selected else 0,
+                address=order_info.get("address", ""),
+                customer_name=order_info.get("name", ""),
+                customer_phone=order_info.get("phone", ""),
+            )
+        except Exception as _e:
+            import logging as _log
+            _log.getLogger(__name__).error("Failed to persist order %s: %s", full_order_id, _e)
 
     return new_state
 
