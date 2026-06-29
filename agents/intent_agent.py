@@ -24,6 +24,12 @@ _CAT_PHONE   = ['điện thoại', 'iphone', 'smartphone', 'android phone']
 _CAT_TABLET  = ['máy tính bảng', 'ipad', 'galaxy tab', 'tablet']
 
 _BUDGET_RE = re.compile(r'(\d+(?:[.,]\d+)?)\s*(?:triệu|tr\b)', re.IGNORECASE)
+_PRICE_ASC_RE = re.compile(
+    r'rẻ nhất|giá rẻ nhất|rẻ nhất|bán rẻ nhất|sinh viên|tiết kiệm|giá thấp nhất|budget|cheapest', re.I
+)
+_PRICE_DESC_RE = re.compile(
+    r'đắt nhất|cao cấp nhất|xịn nhất|flagship|premium|tốt nhất tầm', re.I
+)
 
 _USE_CASE_MAP = {
     'lập trình': 'lập trình', 'coding': 'lập trình', 'code': 'lập trình',
@@ -69,12 +75,22 @@ def _fast_product_intent(text: str) -> dict | None:
             keywords.append(kw)
             break
 
+    sort_by_price = None
+    if _PRICE_ASC_RE.search(text):
+        sort_by_price = "asc"
+    elif _PRICE_DESC_RE.search(text):
+        sort_by_price = "desc"
+
+    # Use price_check when user explicitly asks for cheapest/most expensive without a budget number
+    intent = 'price_check' if (sort_by_price and not budget_max and not budget_min) else 'product_inquiry'
+
     return {
-        'intent': 'product_inquiry',
+        'intent': intent,
         'category': category,
         'requirements': {
             'budget_max': budget_max, 'budget_min': budget_min,
             'use_case': use_case, 'brand': None, 'keywords': keywords,
+            'sort_by_price': sort_by_price,
         },
         'order_info': {},
         'is_ready_to_order': False,

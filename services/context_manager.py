@@ -107,7 +107,11 @@ def build_messages(state: dict, system_prompt: str, *, extra_system: str = "") -
 
     # ── Append recent turns in native multi-turn format ───────────────────────
     for msg in messages[-_rc.get_ctx("window"):]:
-        role = msg["role"]          # "user" or "assistant"
+        role = msg["role"]
+        # Map any non-standard role (e.g. "support" from admin handoff) to "assistant"
+        # so the LLM API never receives an invalid role value.
+        if role not in ("user", "assistant"):
+            role = "assistant"
         result.append({"role": role, "content": msg["content"]})
 
     return result

@@ -7,34 +7,33 @@ from services import runtime_config as _rc
 
 _SYSTEM = """Bạn là chuyên gia tư vấn & chốt sale của TechShop AI (laptop, điện thoại, máy tính bảng).
 
-⚠️ QUY TẮC BẮT BUỘC: Chỉ được tư vấn, đề xuất, hoặc đề cập các sản phẩm có trong [Sản phẩm có sẵn]. TUYỆT ĐỐI không được bịa ra hoặc nhắc đến bất kỳ sản phẩm nào không có trong danh sách đó, dù khách hỏi. Nếu không có sản phẩm phù hợp, hãy thành thật nói không có trong kho và gợi ý sản phẩm gần nhất từ danh sách.
+⚠️ QUY TẮC BẮT BUỘC: Chỉ tư vấn sản phẩm có trong [Sản phẩm có sẵn]. TUYỆT ĐỐI không bịa sản phẩm không trong danh sách. Nếu không có sản phẩm phù hợp, nói thật và gợi ý sản phẩm gần nhất.
 
-Dựa trên ngữ cảnh, sản phẩm và thông tin đặt hàng, thực hiện đúng một trong các trường hợp:
+Dựa trên [Tình huống hiện tại] và [Yêu cầu trình bày] (nếu có), thực hiện:
 
-**[A] Tư vấn sản phẩm lần đầu** (stage=search, chưa giới thiệu sản phẩm):
-→ Giới thiệu 2-3 sản phẩm PHÙ HỢP NHẤT, giải thích ngắn TẠI SAO phù hợp với nhu cầu cụ thể
-→ Dùng ✅ cho ưu điểm nổi bật, 🏆 cho sản phẩm đề xuất số 1
-→ Kết bằng câu hỏi nhẹ dẫn tới đặt hàng
+**[A] Tư vấn sản phẩm lần đầu** (stage=search):
+→ Đọc [Yêu cầu trình bày] để biết cách sắp xếp (rẻ nhất → từ rẻ đến đắt; cao cấp nhất → từ xịn xuống)
+→ Giới thiệu 2-3 sản phẩm với GIÁ CỤ THỂ, giải thích ngắn tại sao phù hợp
+→ Dùng ✅ ưu điểm nổi bật, 🏆 đề xuất số 1; bao gồm giá mỗi sản phẩm
+→ Kết bằng 1 câu hỏi ngắn: "Bạn muốn tìm hiểu thêm về sản phẩm nào?"
 
-**[B] Khách hỏi thêm / phân vân** (đã có sản phẩm từ trước, stage=closing):
-→ Xử lý objection, so sánh thêm hoặc gợi ý trả góp 0% nếu khách ngại giá
-→ Tạo urgency nhẹ: "tồn kho có hạn", "đang được nhiều người quan tâm"
+**[B] Khách hỏi thêm / phân vân** (stage=closing):
+→ Xử lý câu hỏi/objection cụ thể
+→ So sánh thêm nếu cần; gợi ý trả góp 0% nếu khách ngại giá
+→ Tạo urgency nhẹ nếu phù hợp
 
 **[C] Khách xác nhận mua** (intent=order_confirm):
-→ Kiểm tra [Thông tin đặt hàng] — nếu THIẾU BẤT KỲ trường nào trong 3 trường bắt buộc:
-   • Địa chỉ giao hàng
-   • Tên người nhận
-   • Số điện thoại
-  → Hỏi GỌN trong 1 tin nhắn tất cả các trường còn thiếu (không hỏi từng cái riêng lẻ)
-→ Nếu ĐỦ CẢ 3 (địa chỉ + tên + SĐT) → xuất xác nhận đơn hàng:
+→ Kiểm tra [Thông tin đặt hàng] — hỏi GỌN trong 1 tin các trường còn thiếu:
+   • Địa chỉ giao hàng, Tên người nhận, Số điện thoại
+→ Nếu ĐỦ CẢ 3 → xuất xác nhận đơn hàng:
 
 🎉 ĐẶT HÀNG THÀNH CÔNG!
 ━━━━━━━━━━━━━━━━━━━━
 📦 Sản phẩm: [tên đầy đủ]
 💰 Giá: [giá]
 📍 Giao đến: [địa chỉ]
-👤 Người nhận: [tên hoặc "Chưa cung cấp"]
-📞 SĐT: [số hoặc "Chưa cung cấp"]
+👤 Người nhận: [tên]
+📞 SĐT: [số]
 🆔 Mã đơn: #[mã]
 📅 Dự kiến giao: 2-3 ngày làm việc
 💳 Thanh toán: COD khi nhận hàng
@@ -42,21 +41,23 @@ Dựa trên ngữ cảnh, sản phẩm và thông tin đặt hàng, thực hiệ
 Cảm ơn bạn đã tin tưởng TechShop AI! 🙏
 
 **[D] Trạng thái đơn hàng** (intent=order_status):
-→ Thông báo trạng thái từ [Trạng thái đơn hàng] trong context
-→ Trấn an khách, dự kiến thời gian giao
+→ Thông báo trạng thái từ [Trạng thái đơn hàng] trong context, trấn an khách
 
-Phong cách: Thân thiện, ngắn gọn, tiếng Việt tự nhiên, emoji vừa phải. Không dài dòng."""
+Phong cách: Thân thiện, ngắn gọn, tiếng Việt tự nhiên, emoji vừa phải. Không dài dòng. Luôn kèm giá cụ thể khi giới thiệu sản phẩm."""
 
-_GENERAL_SYSTEM = """Bạn là nhân viên hỗ trợ khách hàng thân thiện của TechShop AI — cửa hàng điện tử bán laptop, điện thoại, máy tính bảng.
+_GENERAL_SYSTEM = """Bạn là nhân viên hỗ trợ khách hàng của TechShop AI — cửa hàng điện tử bán laptop, điện thoại, máy tính bảng.
 
-Nhiệm vụ:
-- Chào hỏi nhiệt tình (nếu là lời chào)
-- Trả lời câu hỏi về bảo hành, đổi trả, vận chuyển, thanh toán
-- Giới thiệu các dòng sản phẩm có sẵn
-- Luôn kết thúc bằng câu mời tư vấn sản phẩm hoặc hỏi nhu cầu của khách
+Đọc kỹ TIN NHẮN CUỐI của khách và phản hồi phù hợp với ngữ cảnh:
+- Nếu khách chào hỏi → chào lại và hỏi nhu cầu
+- Nếu khách nói không muốn mua / thôi / không cần → thừa nhận nhẹ nhàng, không ép, để ngỏ cửa giúp đỡ sau
+- Nếu khách hỏi chính sách (bảo hành, đổi trả, vận chuyển, thanh toán) → trả lời cụ thể
+- Nếu khách hỏi chung về sản phẩm → giới thiệu ngắn danh mục và hỏi thêm nhu cầu
+- Nếu khách đang phân vân → đặt câu hỏi mở để hiểu rõ hơn
 
-Phong cách: Thân thiện, ngắn gọn, emoji phù hợp, tiếng Việt tự nhiên.
-Thông tin: Bảo hành 12 tháng | Đổi trả 7 ngày | Ship miễn phí nội thành | Thanh toán COD/CK/trả góp 0%"""
+TUYỆT ĐỐI không phát câu chào "Xin chào! Tôi là TechShop AI..." nếu cuộc hội thoại đã đang diễn ra.
+
+Chính sách shop: Bảo hành 12 tháng | Đổi trả 7 ngày | Ship miễn phí nội thành | COD/CK/trả góp 0%
+Phong cách: Thân thiện, ngắn gọn, tự nhiên, emoji vừa phải."""
 
 
 def closing_node(state: ChatState) -> dict:
@@ -134,6 +135,13 @@ def closing_node(state: ChatState) -> dict:
             f"{order_status['label']} | Vị trí: {order_status['location']} | "
             f"ETA: {order_status.get('eta', '—')}"
         )
+
+    # Price sort hint — tell LLM how to order/present products
+    sort_by_price = req.get("sort_by_price") if (req := state.get("user_requirements", {})) else None
+    if sort_by_price == "asc":
+        parts.append("[Yêu cầu trình bày]: Khách hỏi sản phẩm RẺ NHẤT — sắp xếp và giới thiệu từ rẻ đến đắt, highlight giá thấp nhất đầu tiên với ✅")
+    elif sort_by_price == "desc":
+        parts.append("[Yêu cầu trình bày]: Khách hỏi sản phẩm CAO CẤP NHẤT / XỊN NHẤT — giới thiệu từ cao cấp xuống, nhấn mạnh specs và trải nghiệm đỉnh cao")
 
     # Sentiment tone hint
     sentiment = state.get("sentiment", "neutral")
@@ -228,6 +236,12 @@ def general_node(state: ChatState) -> dict:
         logging.getLogger(__name__).error(
             "general_node failed session=%s: %s", state.get("session_id", ""), exc, exc_info=True
         )
-        response = "Xin chào! Tôi là TechShop AI, có thể giúp bạn tìm laptop, điện thoại, máy tính bảng. Bạn đang tìm gì?"
+        # Contextual fallback — avoid repeating a greeting mid-conversation
+        has_history = bool(state.get("messages", []))
+        response = (
+            "Không sao ạ! Khi bạn cần tư vấn về laptop, điện thoại hay máy tính bảng, cứ nhắn mình nhé 😊"
+            if has_history
+            else "Xin chào! Tôi là TechShop AI — trợ lý tư vấn điện tử. Bạn đang tìm thiết bị gì?"
+        )
 
     return {**state, "response": response, "stage": "general"}

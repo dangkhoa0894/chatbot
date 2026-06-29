@@ -411,6 +411,7 @@ def search_products(
     brand: Optional[str] = None,
     use_case: Optional[str] = None,
     keywords: Optional[list] = None,
+    sort_by_price: Optional[str] = None,  # "asc" | "desc" | None (default: rating desc)
 ) -> List[dict]:
     results = list(_live_products)
 
@@ -452,8 +453,12 @@ def search_products(
         if filtered:
             results = filtered
 
-    # Sort by rating desc
-    results.sort(key=lambda p: p["rating"], reverse=True)
+    if sort_by_price == "asc":
+        results.sort(key=lambda p: p["price"])
+    elif sort_by_price == "desc":
+        results.sort(key=lambda p: p["price"], reverse=True)
+    else:
+        results.sort(key=lambda p: p["rating"], reverse=True)
     return results
 
 

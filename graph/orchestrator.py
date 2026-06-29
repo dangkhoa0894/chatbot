@@ -157,11 +157,14 @@ async def process_message(
     response = result.get("response") or "Xin lỗi, tôi không hiểu. Bạn có thể nói lại không?"
     final_messages = messages + [{"role": "assistant", "content": response}]
 
-    # Update stuck_count: consecutive turns with same unresolved intent signal a loop.
-    _IGNORABLE = {"greeting", "general", "out_of_scope", "escalation", ""}
+    # Update stuck_count: flag loops only when intent AND stage both stop progressing.
+    # Product inquiry/price_check turns are naturally repeated while browsing — don't flag those.
+    _IGNORABLE = {"greeting", "general", "out_of_scope", "escalation", "product_inquiry", "price_check", ""}
     new_intent = result.get("intent", "general")
     prev_intent = state.get("intent", "general")
-    if new_intent == prev_intent and new_intent not in _IGNORABLE:
+    new_stage = result.get("stage", "")
+    prev_stage = state.get("stage", "")
+    if new_intent == prev_intent and new_intent not in _IGNORABLE and new_stage == prev_stage:
         result["stuck_count"] = state.get("stuck_count", 0) + 1
     else:
         result["stuck_count"] = 0

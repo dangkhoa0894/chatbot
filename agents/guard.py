@@ -89,7 +89,7 @@ def _escalation_reason(text: str, state: ChatState) -> str | None:
         return "explicit_request"
     if _FRUSTRATION_RE.search(text) or _FRUSTRATION_PUNCT_RE.search(text):
         return "frustration"
-    if state.get("stuck_count", 0) >= 2:
+    if state.get("stuck_count", 0) >= 4:
         return "conversation_loop"
     return None
 

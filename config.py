@@ -7,14 +7,16 @@ load_dotenv()
 class Settings:
     DEEPINFRA_API_KEY: str = os.getenv("DEEPINFRA_API_KEY", "")
     DEEPINFRA_BASE_URL: str = "https://api.deepinfra.com/v1/openai"
-    MODEL: str = os.getenv("DEEPINFRA_MODEL", "google/gemma-3-12b-it")
+    # Llama-3.3-70B has much better Vietnamese understanding and instruction following
+    # than Gemma-3-12B. Override with DEEPINFRA_MODEL env var if needed.
+    MODEL: str = os.getenv("DEEPINFRA_MODEL", "meta-llama/Llama-3.3-70B-Instruct")
 
-    # Per-agent model routing — use a smaller/faster model for intent,
-    # a more capable one for closing/general if needed.
+    # Per-agent model routing: intent uses a lighter model for speed;
+    # closing/general use the full model for quality responses.
     AGENT_MODELS: dict = {
-        "intent":  os.getenv("MODEL_INTENT",  os.getenv("DEEPINFRA_MODEL", "google/gemma-3-12b-it")),
-        "closing": os.getenv("MODEL_CLOSING", os.getenv("DEEPINFRA_MODEL", "google/gemma-3-12b-it")),
-        "general": os.getenv("MODEL_GENERAL", os.getenv("DEEPINFRA_MODEL", "google/gemma-3-12b-it")),
+        "intent":  os.getenv("MODEL_INTENT",  os.getenv("DEEPINFRA_MODEL", "meta-llama/Llama-3.3-70B-Instruct")),
+        "closing": os.getenv("MODEL_CLOSING", os.getenv("DEEPINFRA_MODEL", "meta-llama/Llama-3.3-70B-Instruct")),
+        "general": os.getenv("MODEL_GENERAL", os.getenv("DEEPINFRA_MODEL", "meta-llama/Llama-3.3-70B-Instruct")),
     }
 
     FB_PAGE_ACCESS_TOKEN: str = os.getenv("FB_PAGE_ACCESS_TOKEN", "")
