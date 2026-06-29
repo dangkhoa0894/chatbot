@@ -24,6 +24,8 @@ _CAT_PHONE   = ['điện thoại', 'iphone', 'smartphone', 'android phone']
 _CAT_TABLET  = ['máy tính bảng', 'ipad', 'galaxy tab', 'tablet']
 
 _BUDGET_RE = re.compile(r'(\d+(?:[.,]\d+)?)\s*(?:triệu|tr\b)', re.IGNORECASE)
+# Standalone phone number (entire message is just a VN phone number)
+_STANDALONE_PHONE_RE = re.compile(r'^\s*(\+?84[3-9]\d{8}|0[3-9]\d{8})\s*$')
 _PRICE_ASC_RE = re.compile(
     r'rẻ nhất|giá rẻ nhất|rẻ nhất|bán rẻ nhất|sinh viên|tiết kiệm|giá thấp nhất|budget|cheapest', re.I
 )
@@ -111,6 +113,19 @@ def _fast_intent(text: str) -> dict | None:
         return {'intent': 'greeting', 'category': None, 'requirements': {},
                 'order_info': {}, 'is_ready_to_order': False, 'sentiment': sentiment,
                 'reasoning': 'fast-path'}
+
+    # Standalone phone number → always order_confirm; never ambiguous
+    phone_only = _STANDALONE_PHONE_RE.match(text)
+    if phone_only:
+        phone_val = phone_only.group(1)
+        # Normalise +84xxx → 0xxx for consistency
+        if phone_val.startswith('+84'):
+            phone_val = '0' + phone_val[3:]
+        elif phone_val.startswith('84') and not phone_val.startswith('0'):
+            phone_val = '0' + phone_val[2:]
+        return {'intent': 'order_confirm', 'category': None, 'requirements': {},
+                'order_info': {'phone': phone_val}, 'is_ready_to_order': False,
+                'sentiment': sentiment, 'reasoning': 'fast-path phone'}
 
     addr_match = _ADDRESS_RE.search(text)
     if addr_match:

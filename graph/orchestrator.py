@@ -158,8 +158,14 @@ async def process_message(
     final_messages = messages + [{"role": "assistant", "content": response}]
 
     # Update stuck_count: flag loops only when intent AND stage both stop progressing.
-    # Product inquiry/price_check turns are naturally repeated while browsing — don't flag those.
-    _IGNORABLE = {"greeting", "general", "out_of_scope", "escalation", "product_inquiry", "price_check", ""}
+    # Exclude intents that are naturally multi-turn: product browsing and order collection
+    # both require several consecutive same-intent messages and should never escalate.
+    _IGNORABLE = {
+        "greeting", "general", "out_of_scope", "escalation",
+        "product_inquiry", "price_check",
+        "order_confirm", "order_status",  # collecting name/address/phone is always multi-turn
+        "",
+    }
     new_intent = result.get("intent", "general")
     prev_intent = state.get("intent", "general")
     new_stage = result.get("stage", "")
