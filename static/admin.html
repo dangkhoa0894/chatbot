@@ -318,6 +318,26 @@ canvas{display:block;width:100%;height:160px}
 .roadmap-chip.c-green{border-color:rgba(34,197,94,.4);color:var(--green)}
 .roadmap-chip.c-amber{border-color:rgba(245,158,11,.4);color:var(--amber)}
 .roadmap-chip.c-red{border-color:rgba(244,63,94,.4);color:var(--red)}
+
+/* ── AI Toggle Switch ── */
+.ai-toggle-wrap{display:flex;align-items:center;gap:6px;user-select:none}
+.ai-toggle-label{font-size:10.5px;font-weight:700;letter-spacing:.8px;color:var(--muted);text-transform:uppercase}
+.ai-toggle-pill{
+  width:38px;height:22px;border-radius:11px;border:none;cursor:pointer;
+  position:relative;transition:background var(--transition);
+  background:var(--border);padding:0;flex-shrink:0;
+}
+.ai-toggle-pill.on{background:var(--green)}
+.ai-toggle-knob{
+  position:absolute;top:3px;left:3px;width:16px;height:16px;
+  border-radius:50%;background:#fff;transition:transform var(--transition);
+  box-shadow:0 1px 3px rgba(0,0,0,.25);
+}
+.ai-toggle-pill.on .ai-toggle-knob{transform:translateX(16px)}
+.ai-toggle-state{font-size:10.5px;font-weight:700;color:var(--muted);min-width:20px;transition:color var(--transition)}
+.ai-toggle-pill.on + .ai-toggle-state{color:var(--green)}
+/* Session list AI indicator */
+.ai-off-badge{display:inline-flex;align-items:center;gap:3px;font-size:9.5px;font-weight:600;padding:1px 6px;border-radius:8px;background:var(--amber-dim);color:var(--amber);border:1px solid rgba(245,158,11,.25)}
 </style>
 </head>
 <body>
@@ -731,10 +751,28 @@ canvas{display:block;width:100%;height:160px}
                 <div class="chat-pane-sid" id="chat-session-id">—</div>
                 <div class="chat-pane-sub" id="chat-session-sub">—</div>
               </div>
-              <div style="display:flex;gap:6px;align-items:center">
-                <button class="btn btn-green btn-sm" onclick="acceptMonitorSession()" id="btn-accept-session" style="display:none">▶ Nhận xử lý</button>
-                <button class="btn btn-ghost btn-sm" onclick="resolveMonitorSession()" id="btn-resolve-session" style="display:none">✓ Kết thúc</button>
-                <button class="btn btn-ghost btn-sm" onclick="acceptMonitorSession()" id="btn-initiate-session" style="display:none">💬 Tiếp cận</button>
+              <div style="display:flex;gap:8px;align-items:center">
+                <!-- AI toggle -->
+                <div class="ai-toggle-wrap" id="ai-toggle-wrap" style="display:none" title="Bật/tắt AI cho phiên này">
+                  <span class="ai-toggle-label">AI</span>
+                  <button class="ai-toggle-pill" id="ai-toggle-pill" onclick="toggleSessionAI()">
+                    <span class="ai-toggle-knob"></span>
+                  </button>
+                  <span class="ai-toggle-state" id="ai-toggle-state">ON</span>
+                </div>
+                <div id="ai-toggle-sep" style="width:1px;height:22px;background:var(--border);margin:0 2px;display:none"></div>
+                <button class="btn btn-green btn-sm" onclick="acceptMonitorSession()" id="btn-accept-session" style="display:none">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  Nhận xử lý
+                </button>
+                <button class="btn btn-ghost btn-sm" onclick="resolveMonitorSession()" id="btn-resolve-session" style="display:none">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                  Kết thúc
+                </button>
+                <button class="btn btn-ghost btn-sm" onclick="acceptMonitorSession()" id="btn-initiate-session" style="display:none">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                  Tiếp cận
+                </button>
               </div>
             </div>
             <!-- Customer journey roadmap -->
@@ -1785,6 +1823,7 @@ function renderSessionList(sessions) {
           ${s.escalated ? `<span class="pulse-dot"></span>` : ''}
           <span class="badge ${s.escalated ? 'badge-red' : 'badge-green'}" style="font-size:9.5px">${s.escalated ? 'ESCALATED' : 'ACTIVE'}</span>
           ${s.admin_joined ? '<span class="badge badge-blue" style="font-size:9.5px">Admin</span>' : ''}
+          ${s.ai_enabled === false ? '<span class="badge badge-amber" style="font-size:9.5px">AI OFF</span>' : ''}
         </div>
         <div class="session-id-chip">${esc(s.session_id.slice(0, 12))}…</div>
         ${s.customer_name ? `<div class="session-meta">${esc(s.customer_name)}${s.customer_phone ? ' · ' + esc(s.customer_phone) : ''}</div>` : ''}
@@ -1840,6 +1879,13 @@ function _updateChatHeader(sessionId) {
     textarea.placeholder = s?.admin_joined ? 'Nhắn tin với khách hàng…' : 'Nhấn "Nhận xử lý" hoặc "Tiếp cận" để bắt đầu nhắn tin';
   }
   if (sendBtn) sendBtn.disabled = !s?.admin_joined;
+
+  // AI toggle: show for all active sessions
+  const toggleWrap = document.getElementById('ai-toggle-wrap');
+  const toggleSep  = document.getElementById('ai-toggle-sep');
+  if (toggleWrap) toggleWrap.style.display = s ? '' : 'none';
+  if (toggleSep)  toggleSep.style.display  = s ? '' : 'none';
+  _updateAIToggle(s?.ai_enabled !== false);
 }
 
 function closeChatPane() {
@@ -1953,6 +1999,40 @@ async function resolveMonitorSession() {
     _monitorToast('Đã kết thúc phiên hỗ trợ', false);
   } catch(e) {
     _monitorToast('Không thể kết thúc phiên', true);
+  }
+}
+
+async function toggleSessionAI() {
+  if (!_selectedSession) return;
+  const pill = document.getElementById('ai-toggle-pill');
+  if (pill) pill.disabled = true;
+  try {
+    const r = await fetch(`/admin/api/sessions/${_selectedSession}/toggle-ai`, {
+      method: 'POST', headers: auth()
+    });
+    if (!r.ok) {
+      const err = await r.json().catch(() => ({}));
+      _monitorToast(`Lỗi bật/tắt AI: ${err.detail || r.status}`, true);
+      return;
+    }
+    const d = await r.json();
+    _updateAIToggle(d.ai_enabled);
+    await loadLiveSessions();
+    _monitorToast(d.ai_enabled ? 'AI đã được bật' : 'AI đã tắt — nhân viên sẽ phản hồi', false);
+  } catch(e) {
+    _monitorToast('Không thể thay đổi trạng thái AI', true);
+  } finally {
+    if (pill) pill.disabled = false;
+  }
+}
+
+function _updateAIToggle(aiEnabled) {
+  const pill  = document.getElementById('ai-toggle-pill');
+  const state = document.getElementById('ai-toggle-state');
+  if (pill)  pill.classList.toggle('on', aiEnabled);
+  if (state) {
+    state.textContent = aiEnabled ? 'ON' : 'OFF';
+    state.style.color = aiEnabled ? 'var(--green)' : 'var(--amber)';
   }
 }
 

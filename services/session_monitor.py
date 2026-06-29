@@ -33,6 +33,7 @@ def register(session_id: str) -> None:
             "customer_name": saved.get("customer_name", ""),
             "customer_phone": saved.get("customer_phone", ""),
             "admin_joined": saved.get("admin_joined", False),
+            "ai_enabled": saved.get("ai_enabled", True),
         }
 
 
@@ -79,13 +80,35 @@ def unflag(session_id: str) -> None:
             _sessions[session_id]["escalated"] = False
             _sessions[session_id]["admin_joined"] = False
             _sessions[session_id]["escalation_reason"] = ""
+            _sessions[session_id]["ai_enabled"] = True
 
 
 def set_admin_joined(session_id: str, joined: bool) -> None:
     with _lock:
         if session_id in _sessions:
             _sessions[session_id]["admin_joined"] = joined
-        _persistent.setdefault(session_id, {})["admin_joined"] = joined
+            if joined:
+                _sessions[session_id]["ai_enabled"] = False
+        p = _persistent.setdefault(session_id, {})
+        p["admin_joined"] = joined
+        if joined:
+            p["ai_enabled"] = False
+
+
+def set_ai_enabled(session_id: str, enabled: bool) -> None:
+    with _lock:
+        if session_id in _sessions:
+            _sessions[session_id]["ai_enabled"] = enabled
+        _persistent.setdefault(session_id, {})["ai_enabled"] = enabled
+
+
+def is_ai_enabled(session_id: str) -> bool:
+    """Return True if the AI bot should respond for this session (default True)."""
+    with _lock:
+        s = _sessions.get(session_id)
+        if s is None:
+            return True
+        return bool(s.get("ai_enabled", True))
 
 
 def get_all() -> list[dict]:

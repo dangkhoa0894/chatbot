@@ -418,3 +418,19 @@ def resolve_session_escalation(
     from services import session_monitor
     session_monitor.unflag(session_id)
     return {"ok": True, "session_id": session_id}
+
+
+@router.post("/sessions/{session_id}/toggle-ai")
+def toggle_ai(
+    session_id: str,
+    authorization: str = Header(None),
+):
+    """Toggle the AI bot on/off for a specific session."""
+    _auth(authorization)
+    from services import session_monitor
+    info = session_monitor.get(session_id)
+    if info is None:
+        raise HTTPException(status_code=404, detail="Session not active")
+    new_state = not info.get("ai_enabled", True)
+    session_monitor.set_ai_enabled(session_id, new_state)
+    return {"ok": True, "session_id": session_id, "ai_enabled": new_state}

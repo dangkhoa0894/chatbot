@@ -125,14 +125,23 @@ async def websocket_endpoint(websocket: WebSocket):
 
             session_monitor.touch(session_id)
 
-            # ── Admin handling: mute bot, save message, re-enable input ──────
-            if session_monitor.is_admin_handling(session_id):
+            # ── AI muted: save message for admin, do not invoke bot ─────────
+            if not session_monitor.is_ai_enabled(session_id):
                 state = await session_store.get_session(session_id) or {}
                 msgs = state.get("messages", [])
                 msgs.append({"role": "user", "content": user_text})
                 state["messages"] = msgs
                 await session_store.save_session(session_id, state)
-                await manager.send(session_id, {"type": "ack"})
+                # If admin has joined, just ack silently; otherwise notify user
+                if not session_monitor.is_admin_handling(session_id):
+                    await manager.send(session_id, {
+                        "type": "message",
+                        "role": "assistant",
+                        "content": "Tin nhắn của bạn đã được ghi nhận. Nhân viên hỗ trợ sẽ phản hồi cho bạn ngay!",
+                        "metadata": {},
+                    })
+                else:
+                    await manager.send(session_id, {"type": "ack"})
                 continue
 
             # ── Rate limiting ────────────────────────────────────────────────
