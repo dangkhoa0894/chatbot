@@ -96,6 +96,17 @@ def init_db() -> None:
             CREATE INDEX IF NOT EXISTS idx_orders_ts         ON orders(ts);
             CREATE INDEX IF NOT EXISTS idx_orders_session_id ON orders(session_id);
             CREATE INDEX IF NOT EXISTS idx_orders_status     ON orders(status);
+
+            CREATE TABLE IF NOT EXISTS customers (
+                phone           TEXT PRIMARY KEY,
+                name            TEXT DEFAULT '',
+                address         TEXT DEFAULT '',
+                order_count     INTEGER DEFAULT 0,
+                total_spent     INTEGER DEFAULT 0,
+                last_order_ts   TEXT DEFAULT '',
+                first_seen_ts   TEXT NOT NULL DEFAULT ''
+            );
+            CREATE INDEX IF NOT EXISTS idx_customers_name ON customers(name);
         """)
 
 
@@ -372,6 +383,8 @@ def create_order(
             "UPDATE products SET stock = MAX(0, stock - 1) WHERE id = ?",
             (product_id,),
         )
+    if customer_phone:
+        upsert_customer(customer_phone, customer_name, address, price)
 
 
 def get_orders(
@@ -392,6 +405,56 @@ def get_orders(
         total = c.execute(f"SELECT COUNT(*) FROM orders {where}", params).fetchone()[0]
         rows = c.execute(
             f"SELECT * FROM orders {where} ORDER BY ts DESC LIMIT ? OFFSET ?",
+            params + [limit, offset],
+        ).fetchall()
+    return {"total": total, "rows": [dict(r) for r in rows]}
+
+
+def get_order_by_id(order_id: str) -> dict | None:
+    with _conn() as c:
+        r = c.execute("SELECT * FROM orders WHERE id = ?", (order_id,)).fetchone()
+    return dict(r) if r else None
+
+
+def update_order_status(order_id: str, status: str) -> bool:
+    with _conn() as c:
+        n = c.execute("UPDATE orders SET status = ? WHERE id = ?", (status, order_id)).rowcount
+    return n > 0
+
+
+def upsert_customer(phone: str, name: str = "", address: str = "", price: int = 0) -> None:
+    ts = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+    with _conn() as c:
+        existing = c.execute("SELECT phone FROM customers WHERE phone = ?", (phone,)).fetchone()
+        if existing:
+            c.execute(
+                "UPDATE customers SET"
+                " name = CASE WHEN ? != '' THEN ? ELSE name END,"
+                " address = CASE WHEN ? != '' THEN ? ELSE address END,"
+                " order_count = order_count + 1,"
+                " total_spent = total_spent + ?,"
+                " last_order_ts = ?"
+                " WHERE phone = ?",
+                (name, name, address, address, price, ts, phone),
+            )
+        else:
+            c.execute(
+                "INSERT INTO customers (phone, name, address, order_count, total_spent, last_order_ts, first_seen_ts)"
+                " VALUES (?,?,?,1,?,?,?)",
+                (phone, name, address, price, ts, ts),
+            )
+
+
+def get_customers(limit: int = 50, offset: int = 0, q: str | None = None) -> dict:
+    conditions, params = [], []
+    if q:
+        conditions.append("(phone LIKE ? OR name LIKE ?)")
+        params.extend([f"%{q}%", f"%{q}%"])
+    where = ("WHERE " + " AND ".join(conditions)) if conditions else ""
+    with _conn() as c:
+        total = c.execute(f"SELECT COUNT(*) FROM customers {where}", params).fetchone()[0]
+        rows = c.execute(
+            f"SELECT * FROM customers {where} ORDER BY last_order_ts DESC LIMIT ? OFFSET ?",
             params + [limit, offset],
         ).fetchall()
     return {"total": total, "rows": [dict(r) for r in rows]}

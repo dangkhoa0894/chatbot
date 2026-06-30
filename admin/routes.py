@@ -4,7 +4,9 @@ import hmac
 import hashlib
 import base64
 import json
-from fastapi import APIRouter, HTTPException, Header, Query, Request
+import csv
+import io
+from fastapi import APIRouter, HTTPException, Header, Query, Request, UploadFile, File
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from typing import Optional, Any, Dict
@@ -13,7 +15,8 @@ from db.database import (
     get_token_stats, get_token_logs, get_distinct_agents,
     load_all_products, upsert_product, delete_product,
     get_escalations, resolve_escalation,
-    get_orders,
+    get_orders, get_order_by_id, update_order_status,
+    get_customers,
 )
 from services.product_service import reload_products
 from services import runtime_config as _rc
@@ -250,6 +253,86 @@ def remove_product(product_id: str, authorization: str = Header(None)):
     return {"id": product_id, "status": "deleted"}
 
 
+@router.post("/products/import")
+async def import_products_csv(
+    file: UploadFile = File(...),
+    authorization: str = Header(None),
+):
+    _auth(authorization)
+    content = await file.read()
+    try:
+        text = content.decode("utf-8-sig")
+    except UnicodeDecodeError:
+        text = content.decode("latin-1")
+
+    reader = csv.DictReader(io.StringIO(text))
+    required = {"name", "brand", "category", "price"}
+    if reader.fieldnames is None or not required.issubset({f.strip().lower() for f in reader.fieldnames}):
+        raise HTTPException(
+            status_code=400,
+            detail=f"CSV phải có các cột: {', '.join(required)}",
+        )
+
+    existing = load_all_products()
+    by_name_brand = {(p["name"].lower(), p["brand"].lower()): p["id"] for p in existing}
+
+    created, updated, errors = 0, 0, []
+    for i, row in enumerate(reader, 1):
+        row = {k.strip().lower(): v.strip() for k, v in row.items() if k}
+        try:
+            if not row.get("name") or not row.get("brand") or not row.get("category") or not row.get("price"):
+                errors.append(f"Hàng {i}: thiếu name/brand/category/price")
+                continue
+
+            price_raw = row["price"].replace(",", "").replace(".", "").replace(" ", "")
+            p = {
+                "name":      row["name"],
+                "brand":     row["brand"],
+                "category":  row["category"].lower(),
+                "price":     int(price_raw),
+                "stock":     int(row.get("stock") or 0),
+                "rating":    float(row.get("rating") or 4.0),
+                "highlight": row.get("highlight", ""),
+                "use_cases": [x.strip() for x in row.get("use_cases", "").split("|") if x.strip()],
+                "tags":      [x.strip() for x in row.get("tags", "").split("|") if x.strip()],
+                "pros":      [x.strip() for x in row.get("pros", "").split("|") if x.strip()],
+                "cons":      [x.strip() for x in row.get("cons", "").split("|") if x.strip()],
+                "specs":     {},
+            }
+            if row.get("specs"):
+                try:
+                    p["specs"] = json.loads(row["specs"])
+                except Exception:
+                    pass
+
+            if p["category"] not in ("laptop", "phone", "tablet"):
+                errors.append(f"Hàng {i}: category phải là laptop/phone/tablet")
+                continue
+
+            row_id = row.get("id", "").strip()
+            if row_id:
+                p["id"] = row_id
+                upsert_product(p)
+                updated += 1
+            else:
+                key = (p["name"].lower(), p["brand"].lower())
+                if key in by_name_brand:
+                    p["id"] = by_name_brand[key]
+                    upsert_product(p)
+                    updated += 1
+                else:
+                    prefix = {"laptop": "LP", "phone": "PH", "tablet": "TB"}.get(p["category"], "PR")
+                    p["id"] = prefix + uuid.uuid4().hex[:4].upper()
+                    by_name_brand[key] = p["id"]
+                    upsert_product(p)
+                    created += 1
+        except Exception as exc:
+            errors.append(f"Hàng {i}: {exc}")
+
+    reload_products()
+    return {"created": created, "updated": updated, "errors": errors}
+
+
 # ── CSAT ──────────────────────────────────────────────────────────────────────
 @router.get("/csat")
 def csat_stats(days: int = 7, authorization: str = Header(None)):
@@ -281,6 +364,61 @@ def list_orders(
 ):
     _auth(authorization)
     return get_orders(limit=limit, offset=offset, status=status, session_id=session_id)
+
+
+class OrderStatusPayload(BaseModel):
+    status: str
+
+
+_ORDER_STATUS_MESSAGES = {
+    "shipped":   "📦 Đơn hàng #{id} của bạn đang được giao! Dự kiến 2–3 ngày làm việc.",
+    "delivered": "✅ Đơn hàng #{id} đã được giao thành công! Cảm ơn bạn đã mua hàng tại TechShop.",
+    "cancelled": "❌ Đơn hàng #{id} đã bị huỷ. Vui lòng liên hệ hỗ trợ nếu có thắc mắc.",
+}
+
+_VALID_STATUSES = {"confirmed", "shipped", "delivered", "cancelled"}
+
+
+@router.patch("/orders/{order_id}/status")
+async def set_order_status(
+    order_id: str,
+    body: OrderStatusPayload,
+    authorization: str = Header(None),
+):
+    _auth(authorization)
+    if body.status not in _VALID_STATUSES:
+        raise HTTPException(status_code=400, detail=f"status phải là: {', '.join(_VALID_STATUSES)}")
+
+    order = get_order_by_id(order_id)
+    if not order:
+        raise HTTPException(status_code=404, detail="Đơn hàng không tồn tại")
+
+    update_order_status(order_id, body.status)
+
+    # Push WebSocket notification to customer if session is active
+    msg_tpl = _ORDER_STATUS_MESSAGES.get(body.status)
+    if msg_tpl and order.get("session_id"):
+        from channels.websocket_handler import manager
+        await manager.send(order["session_id"], {
+            "type": "message",
+            "role": "assistant",
+            "content": msg_tpl.format(id=order_id),
+            "metadata": {},
+        })
+
+    return {"order_id": order_id, "status": body.status}
+
+
+# ── Customers ──────────────────────────────────────────────────────────────────
+@router.get("/customers")
+def list_customers(
+    limit: int = Query(50, le=200),
+    offset: int = 0,
+    q: Optional[str] = None,
+    authorization: str = Header(None),
+):
+    _auth(authorization)
+    return get_customers(limit=limit, offset=offset, q=q)
 
 
 @router.patch("/escalations/{escalation_id}/resolve")
