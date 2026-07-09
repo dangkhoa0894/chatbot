@@ -157,36 +157,24 @@ p{color:var(--text-2);line-height:1.75}
 .hero-note{font-size:12px;color:var(--text-3);margin-top:16px;display:flex;align-items:center;gap:6px}
 .hero-note svg{color:var(--green)}
 
-/* Glass chat window */
-.chat-win{background:var(--g1);backdrop-filter:var(--blur-lg);-webkit-backdrop-filter:var(--blur-lg);border:1px solid var(--gb);border-radius:26px;overflow:hidden;box-shadow:0 40px 120px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.08)}
-[data-theme="light"] .chat-win{box-shadow:0 24px 80px rgba(80,60,200,.14),0 0 0 1px var(--gb)}
-.chat-hdr{padding:14px 18px;border-bottom:1px solid var(--gb);display:flex;align-items:center;gap:10px;background:var(--g2)}
-.chat-av{width:32px;height:32px;background:linear-gradient(135deg,#7C3AED,#4338CA);border-radius:50%;display:flex;align-items:center;justify-content:center}
-.chat-info{flex:1}
-.chat-name{font-weight:700;font-size:13.5px;line-height:1.2}
-.chat-status{font-size:11.5px;color:var(--teal);display:flex;align-items:center;gap:5px}
-.chat-channels{display:flex;gap:5px;margin-left:auto}
-.ch-dot{width:22px;height:22px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px}
-.chat-body{height:320px;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:8px}
-.msg{max-width:82%;padding:9px 14px;border-radius:14px;font-size:13px;line-height:1.55;opacity:0;transform:translateY(8px);transition:opacity .35s,transform .35s}
-.msg.show{opacity:1;transform:none}
-.msg.user{align-self:flex-end;background:linear-gradient(135deg,#7C3AED,#5B21B6);color:#fff;border-radius:14px 14px 3px 14px}
-.msg.bot{align-self:flex-start;background:var(--g2);backdrop-filter:blur(12px);border:1px solid var(--gb);border-radius:14px 14px 14px 3px}
-.msg.bot strong{color:var(--text)}
-.typing-ind{align-self:flex-start;background:var(--g2);backdrop-filter:blur(12px);border:1px solid var(--gb);border-radius:14px;padding:11px 14px;display:none;gap:4px;align-items:center}
-.typing-ind.on{display:flex}
-.typing-ind span{width:7px;height:7px;background:var(--text-3);border-radius:50%;animation:tb 1.2s ease infinite}
-.typing-ind span:nth-child(2){animation-delay:.2s}
-.typing-ind span:nth-child(3){animation-delay:.4s}
-@keyframes tb{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px);background:var(--violet)}}
-.pcard{background:var(--g2);backdrop-filter:blur(12px);border:1px solid var(--gb);border-radius:12px;padding:11px 13px;margin-top:4px;font-size:12px}
-.pcard-name{font-weight:700;font-size:13px;color:var(--text);margin-bottom:2px}
-.pcard-price{color:var(--violet);font-weight:700;font-size:14px}
-.pcard-spec{color:var(--text-3);font-size:11px;margin-top:2px}
-.pcard-badge{display:inline-block;background:var(--tdim);color:var(--teal);font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;margin-top:5px;border:1px solid rgba(45,212,191,.2)}
-.chat-inp{padding:11px 14px;border-top:1px solid var(--gb);display:flex;gap:8px;align-items:center;background:var(--g1)}
-.inp-fake{flex:1;background:var(--g2);border:1px solid var(--gb);border-radius:8px;padding:8px 12px;font-size:12.5px;color:var(--text-3);font-family:var(--font)}
-.send-btn{width:32px;height:32px;background:linear-gradient(135deg,#7C3AED,#4338CA);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 0 12px rgba(124,58,237,.4)}
+/* ── DELIVERY DISPLAY (hero visual) ─────────────────────────────────────── */
+.delivery-display{position:relative;background:var(--g1);backdrop-filter:var(--blur-lg);-webkit-backdrop-filter:var(--blur-lg);border:1px solid var(--gb);border-radius:32px;overflow:hidden;box-shadow:0 40px 120px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.08);padding:44px 44px 36px}
+[data-theme="light"] .delivery-display{box-shadow:0 24px 80px rgba(80,60,200,.14)}
+.dd-glow{position:absolute;top:40%;left:50%;transform:translate(-50%,-50%);width:420px;height:420px;background:radial-gradient(circle,rgba(109,40,217,.18) 0%,transparent 65%);pointer-events:none}
+.dd-eyebrow{font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--text-3);margin-bottom:16px}
+.dd-number{display:flex;align-items:baseline;gap:14px;margin-bottom:28px;line-height:1;position:relative;z-index:1}
+.dd-digit{font-family:var(--mono);font-size:clamp(100px,13vw,148px);font-weight:700;letter-spacing:-.04em;background:linear-gradient(135deg,#D8B4FE 0%,#A78BFA 50%,#818CF8 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-variant-numeric:tabular-nums;line-height:.95}
+[data-theme="light"] .dd-digit{background:linear-gradient(135deg,#7C3AED 0%,#4338CA 100%);-webkit-background-clip:text;background-clip:text}
+.dd-unit{font-size:32px;font-weight:600;color:var(--text-2);letter-spacing:-.02em;padding-bottom:8px}
+.dd-sep{height:1px;background:var(--gb);margin-bottom:24px;position:relative;z-index:1}
+.dd-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:28px;position:relative;z-index:1}
+.dd-metric{display:flex;flex-direction:column;gap:4px}
+.dm-val{font-family:var(--mono);font-size:20px;font-weight:700;color:var(--text);font-variant-numeric:tabular-nums;line-height:1}
+.dm-lbl{font-size:10.5px;color:var(--text-3);line-height:1.4}
+.dd-channels{display:flex;gap:7px;align-items:center;padding-top:20px;border-top:1px solid var(--gb-s);position:relative;z-index:1;flex-wrap:wrap}
+.dd-ch{height:28px;padding:0 11px;border-radius:7px;border:1px solid var(--gb);background:var(--g2);display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:700;color:var(--text-2);backdrop-filter:var(--blur-sm);-webkit-backdrop-filter:var(--blur-sm)}
+.dd-ch-zalo{background:#0068FF;color:#fff;border-color:transparent}
+.dd-ch-fb{background:#0866FF;color:#fff;border-color:transparent}
 
 /* Floating glass chips */
 .float-chip{position:absolute;background:var(--g2);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);border:1px solid var(--gb);border-radius:16px;padding:12px 17px;box-shadow:0 12px 40px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.08)}
@@ -404,7 +392,7 @@ footer{padding:64px 0 40px;border-top:1px solid var(--gb)}
           cho doanh nghiệp<br>
           hiện đại
         </h1>
-        <p class="hero-sub">Triển khai trợ lý AI tư vấn, chăm sóc khách hàng và bán hàng trên Zalo, Facebook Messenger, Website — đội ngũ kỹ thuật RynexaAI triển khai hoàn chỉnh và bàn giao trong vòng 24 giờ.</p>
+        <p class="hero-sub">Triển khai trợ lý AI tư vấn, chăm sóc khách hàng và bán hàng trên Zalo, Facebook Messenger, Website — đội ngũ kỹ thuật RynexaAI triển khai hoàn chỉnh và bàn giao trong vòng 72 giờ.</p>
         <div class="hero-cta">
           <a href="#lien-he" class="btn btn-primary btn-lg">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
@@ -420,43 +408,46 @@ footer{padding:64px 0 40px;border-top:1px solid var(--gb)}
 
       <div class="hero-demo reveal" style="position:relative;transition-delay:.15s">
         <div class="float-chip fc-1">
-          <div class="chip-val">1.2<span style="font-size:.5em;color:var(--text-2)">s</span></div>
-          <div class="chip-lbl">Thời gian phản hồi</div>
+          <div class="chip-val" style="color:var(--green)">247</div>
+          <div class="chip-lbl">Sessions đang hoạt động</div>
           <div class="chip-delta">
             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="18 15 12 9 6 15"/></svg>
-            -18% so với tháng trước
+            +12% so với hôm qua
           </div>
         </div>
         <div class="float-chip fc-2">
-          <div class="chip-val" style="color:var(--teal)">98.4<span style="font-size:.5em">%</span></div>
-          <div class="chip-lbl">Độ hài lòng CSAT</div>
+          <div class="chip-val" style="color:var(--violet)">96.8<span style="font-size:.5em">%</span></div>
+          <div class="chip-lbl">Độ chính xác intent</div>
         </div>
-        <div class="chat-win">
-          <div class="chat-hdr">
-            <div class="chat-av">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                <polygon points="12,3 22,21 2,21" stroke="white" stroke-width="1.5" stroke-linejoin="round" fill="rgba(255,255,255,.15)"/>
-                <line x1="7" y1="15" x2="17" y2="15" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
-              </svg>
+        <div class="delivery-display">
+          <div class="dd-glow"></div>
+          <div class="dd-eyebrow">Triển khai hoàn chỉnh trong</div>
+          <div class="dd-number">
+            <span class="dd-digit">72</span>
+            <span class="dd-unit">giờ</span>
+          </div>
+          <div class="dd-sep"></div>
+          <div class="dd-metrics">
+            <div class="dd-metric">
+              <span class="dm-val" style="color:var(--teal)">98.4%</span>
+              <span class="dm-lbl">Độ hài lòng CSAT</span>
             </div>
-            <div class="chat-info">
-              <div class="chat-name">RynexaAI Assistant</div>
-              <div class="chat-status"><div class="ldot"></div>Đang trực tuyến</div>
+            <div class="dd-metric">
+              <span class="dm-val">1.2s</span>
+              <span class="dm-lbl">Phản hồi AI</span>
             </div>
-            <div class="chat-channels">
-              <div class="ch-dot" style="background:#0068FF;border-radius:6px;color:#fff;font-weight:700;font-size:12px">Z</div>
-              <div class="ch-dot" style="background:#0866FF;border-radius:6px;color:#fff;font-size:9px">f</div>
-              <div class="ch-dot" style="background:var(--g2);border:1px solid var(--gb)"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></div>
+            <div class="dd-metric">
+              <span class="dm-val" style="color:var(--violet)">99.9%</span>
+              <span class="dm-lbl">Uptime SLA</span>
             </div>
           </div>
-          <div class="chat-body" id="chat-body">
-            <div class="typing-ind" id="typing"><span></span><span></span><span></span></div>
-          </div>
-          <div class="chat-inp">
-            <div class="inp-fake">Nhắn tin với RynexaAI...</div>
-            <div class="send-btn">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-            </div>
+          <div class="dd-channels">
+            <div class="dd-ch dd-ch-zalo">Z · Zalo</div>
+            <div class="dd-ch dd-ch-fb">f · Messenger</div>
+            <div class="dd-ch">Telegram</div>
+            <div class="dd-ch">WhatsApp</div>
+            <div class="dd-ch">Website</div>
+            <div class="dd-ch">Doanh nghiệp</div>
           </div>
         </div>
       </div>
@@ -808,41 +799,6 @@ const numObs = new IntersectionObserver(entries => {
   });
 }, { threshold: .5 });
 document.querySelectorAll('.num').forEach(el => numObs.observe(el));
-
-/* ── CHAT ANIMATION ─────────────────────────────────────────────────────── */
-const chatBody = document.getElementById('chat-body');
-const typingEl = document.getElementById('typing');
-const MSGS = [
-  { role:'user', text:'Cho tôi tư vấn laptop gaming khoảng 25–30 triệu', delay:800 },
-  { role:'bot',  text:'Tôi có 3 lựa chọn phù hợp ngân sách của bạn:', delay:2200, typeDur:1200 },
-  { role:'card', delay:2400 },
-  { role:'user', text:'ASUS ROG có bảo hành không?', delay:5500 },
-  { role:'bot',  text:'ASUS ROG Strix G16 được bảo hành <strong>24 tháng chính hãng</strong> tại 120+ trung tâm toàn quốc. Bạn muốn đặt hàng không?', delay:7200, typeDur:1400 },
-  { role:'user', text:'Đặt luôn, giao về Hà Nội', delay:9500 },
-  { role:'bot',  text:'<strong>Đặt hàng thành công.</strong> Mã đơn #ORD2847. Dự kiến giao 2–3 ngày. Bạn sẽ nhận thông báo theo từng bước.', delay:11200, typeDur:1600 },
-];
-function addMsg(m) {
-  const el = document.createElement('div');
-  el.className = 'msg ' + (m.role === 'user' ? 'user' : 'bot');
-  if (m.role === 'card') {
-    el.style.cssText = 'padding:0;background:transparent';
-    el.innerHTML = `<div class="pcard"><div class="pcard-name">ASUS ROG Strix G16 2024</div><div class="pcard-price">27.990.000đ</div><div class="pcard-spec">RTX 4070 · i9-14900HX · 32GB · 1TB</div><div class="pcard-badge">Đề xuất #1</div></div>`;
-  } else { el.innerHTML = m.text; }
-  chatBody.insertBefore(el, typingEl);
-  requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('show')));
-  chatBody.scrollTop = chatBody.scrollHeight;
-}
-function runChat(i) {
-  if (i >= MSGS.length) { setTimeout(() => { chatBody.querySelectorAll('.msg').forEach(e => e.remove()); setTimeout(() => runChat(0), 600); }, 4000); return; }
-  const m = MSGS[i];
-  setTimeout(() => {
-    if (m.role !== 'user') {
-      if (m.role === 'bot') { typingEl.classList.add('on'); chatBody.scrollTop = chatBody.scrollHeight; }
-      setTimeout(() => { typingEl.classList.remove('on'); addMsg(m); runChat(i + 1); }, m.typeDur || 0);
-    } else { addMsg(m); runChat(i + 1); }
-  }, m.delay);
-}
-setTimeout(() => runChat(0), 1200);
 
 /* ── SPARKLINE ──────────────────────────────────────────────────────────── */
 function sparkline(id, data, color) {
