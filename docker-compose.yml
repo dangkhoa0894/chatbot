@@ -42,6 +42,12 @@ services:
       retries: 3
       start_period: 15s
 
+  landing:
+    build: ./landing
+    ports:
+      - "${LANDING_PORT:-8291}:80"
+    restart: unless-stopped
+
 volumes:
   redis_data:
   chatbot_data:
