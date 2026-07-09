@@ -3,296 +3,236 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>VietBot AI — Nền tảng Chatbot Đa Kênh Thế Hệ Mới</title>
+<title>RynexaAI — Nền tảng Chatbot Đa Kênh Thế Hệ Mới</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
-/* ═══════════════════════════════════════════════════════
-   DESIGN TOKENS
-═══════════════════════════════════════════════════════ */
+/* ── TOKENS ──────────────────────────────────────────────────────────────── */
 :root {
-  --bg:      #060D1F;
-  --surf:    #0B1628;
-  --panel:   #0F2040;
-  --panel-2: #122348;
-  --border:  rgba(255,255,255,.09);
-  --border-s:rgba(255,255,255,.04);
+  --bg:        #060818;
+  --g1:        rgba(255,255,255,.04);
+  --g2:        rgba(255,255,255,.07);
+  --g3:        rgba(255,255,255,.11);
+  --gb:        rgba(255,255,255,.08);
+  --gb-s:      rgba(255,255,255,.04);
+  --gb-hi:     rgba(255,255,255,.16);
+  --blur:      blur(24px) saturate(180%);
+  --blur-sm:   blur(14px) saturate(160%);
+  --blur-lg:   blur(40px) saturate(200%);
 
-  --blue:    #1E5BFF;
-  --blue-dim:rgba(30,91,255,.14);
-  --blue-2:  #2D6AFF;
-  --teal:    #0ECFB1;
-  --teal-dim:rgba(14,207,177,.12);
-  --amber:   #F5A623;
-  --amber-dim:rgba(245,166,35,.13);
-  --red:     #F43F5E;
-  --green:   #22C55E;
+  --violet:    #A78BFA;
+  --violet-2:  #7C3AED;
+  --vdim:      rgba(167,139,250,.12);
+  --vglow:     rgba(124,58,237,.3);
+  --teal:      #2DD4BF;
+  --tdim:      rgba(45,212,191,.12);
+  --blue:      #60A5FA;
+  --bdim:      rgba(96,165,250,.12);
+  --amber:     #FBD34D;
+  --adim:      rgba(251,211,77,.12);
+  --red:       #FB7185;
+  --green:     #34D399;
 
-  --text:    #EDF2FF;
-  --text-2:  #7A90B8;
-  --text-3:  #3D5070;
+  --text:      rgba(248,250,255,.95);
+  --text-2:    rgba(248,250,255,.55);
+  --text-3:    rgba(248,250,255,.28);
 
-  --font:    'Sora', system-ui, -apple-system, sans-serif;
-  --mono:    'JetBrains Mono','SF Mono',ui-monospace,monospace;
-  --r:       12px;
-  --r-lg:    20px;
-  --r-xl:    28px;
-  --ease:    cubic-bezier(.4,0,.2,1);
+  --font:      'Sora',system-ui,-apple-system,sans-serif;
+  --mono:      'JetBrains Mono','SF Mono',ui-monospace,monospace;
+  --r:         14px;
+  --r-lg:      22px;
+  --r-xl:      32px;
+  --ease:      cubic-bezier(.4,0,.2,1);
 }
 [data-theme="light"] {
-  --bg:      #F0F5FF;
-  --surf:    #FFFFFF;
-  --panel:   #F8FAFF;
-  --panel-2: #EEF4FF;
-  --border:  rgba(0,0,0,.09);
-  --border-s:rgba(0,0,0,.04);
-  --blue:    #1648E8;
-  --blue-dim:rgba(22,72,232,.10);
-  --blue-2:  #2558F5;
-  --teal:    #0AB89F;
-  --teal-dim:rgba(10,184,159,.10);
-  --amber:   #D97706;
-  --amber-dim:rgba(217,119,6,.10);
-  --text:    #0D1427;
-  --text-2:  #3D5070;
-  --text-3:  #8A9BB8;
+  --bg:    #EEF2FF;
+  --g1:    rgba(255,255,255,.55);
+  --g2:    rgba(255,255,255,.72);
+  --g3:    rgba(255,255,255,.88);
+  --gb:    rgba(180,180,240,.28);
+  --gb-s:  rgba(180,180,240,.14);
+  --gb-hi: rgba(124,58,237,.28);
+  --violet:#7C3AED; --vdim:rgba(124,58,237,.08);
+  --teal:  #0D9488; --tdim:rgba(13,148,136,.08);
+  --blue:  #3B82F6; --bdim:rgba(59,130,246,.08);
+  --amber: #D97706; --adim:rgba(217,119,6,.08);
+  --text:  rgba(10,12,40,.95);
+  --text-2:rgba(10,12,40,.55);
+  --text-3:rgba(10,12,40,.30);
 }
 
-/* ═══════════════════════════════════════════════════════
-   RESET & BASE
-═══════════════════════════════════════════════════════ */
+/* ── RESET ───────────────────────────────────────────────────────────────── */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
-body{
-  background:var(--bg);
-  color:var(--text);
-  font-family:var(--font);
-  font-size:15px;
-  line-height:1.7;
-  -webkit-font-smoothing:antialiased;
-  transition:background .25s,color .25s;
-}
+body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:15px;line-height:1.7;-webkit-font-smoothing:antialiased;overflow-x:hidden}
 a{color:inherit;text-decoration:none}
 img{max-width:100%;display:block}
 button{font-family:var(--font);cursor:pointer;border:none;background:none}
-::-webkit-scrollbar{width:6px}
-::-webkit-scrollbar-thumb{background:var(--border);border-radius:99px}
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-thumb{background:var(--gb);border-radius:99px}
 
-/* Type scale */
-h1{font-size:clamp(36px,5.5vw,62px);font-weight:800;line-height:1.1;letter-spacing:-.04em;text-wrap:balance}
-h2{font-size:clamp(28px,4vw,46px);font-weight:700;line-height:1.2;letter-spacing:-.03em;text-wrap:balance}
+/* ── BLOBS ───────────────────────────────────────────────────────────────── */
+.blobs{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+.blob{position:absolute;border-radius:50%;filter:blur(90px)}
+.b1{width:700px;height:700px;top:-200px;left:-150px;background:radial-gradient(circle,rgba(109,40,217,.22) 0%,transparent 70%)}
+.b2{width:600px;height:600px;top:25%;right:-150px;background:radial-gradient(circle,rgba(14,116,144,.18) 0%,transparent 70%)}
+.b3{width:480px;height:480px;bottom:30%;left:30%;background:radial-gradient(circle,rgba(30,91,255,.14) 0%,transparent 70%)}
+.b4{width:400px;height:400px;bottom:-80px;right:15%;background:radial-gradient(circle,rgba(109,40,217,.16) 0%,transparent 70%)}
+[data-theme="light"] .b1{background:radial-gradient(circle,rgba(167,139,250,.22) 0%,transparent 70%)}
+[data-theme="light"] .b2{background:radial-gradient(circle,rgba(45,212,191,.16) 0%,transparent 70%)}
+[data-theme="light"] .b3{background:radial-gradient(circle,rgba(96,165,250,.14) 0%,transparent 70%)}
+[data-theme="light"] .b4{background:radial-gradient(circle,rgba(167,139,250,.16) 0%,transparent 70%)}
+nav,section,footer,.hero{position:relative;z-index:1}
+
+/* ── TYPE ────────────────────────────────────────────────────────────────── */
+h1{font-size:clamp(36px,5.5vw,64px);font-weight:800;line-height:1.08;letter-spacing:-.04em;text-wrap:balance}
+h2{font-size:clamp(27px,4vw,48px);font-weight:700;line-height:1.18;letter-spacing:-.03em;text-wrap:balance}
 h3{font-size:clamp(17px,2.5vw,22px);font-weight:600;line-height:1.3;letter-spacing:-.02em}
 h4{font-size:15px;font-weight:600;letter-spacing:-.01em}
 p{color:var(--text-2);line-height:1.75}
-
 .mono{font-family:var(--mono)}
-.label{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--teal);display:block;margin-bottom:12px}
+.label{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--violet);display:block;margin-bottom:14px}
+.grad{background:linear-gradient(135deg,#C4B5FD 0%,#818CF8 50%,#2DD4BF 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
 
-/* Layout */
+/* ── LAYOUT ──────────────────────────────────────────────────────────────── */
 .wrap{width:100%;max-width:1200px;margin:0 auto;padding:0 28px}
-.section{padding:96px 0}
+.section{padding:100px 0}
+.sec-head{text-align:center;margin-bottom:68px}
+.sec-head h2{margin-bottom:16px}
+.sec-head p{max-width:520px;margin:0 auto;font-size:16px}
+.divider{height:1px;background:var(--gb);margin:0}
 
-/* Buttons */
-.btn{
-  display:inline-flex;align-items:center;gap:8px;
-  padding:13px 28px;border-radius:10px;font-size:14.5px;font-weight:600;
-  transition:all .2s var(--ease);white-space:nowrap;
-}
-.btn-primary{background:var(--blue);color:#fff}
-.btn-primary:hover{background:var(--blue-2);transform:translateY(-1px);box-shadow:0 8px 28px rgba(30,91,255,.35)}
-.btn-ghost{background:var(--border);color:var(--text);border:1px solid var(--border)}
-.btn-ghost:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-dim)}
-.btn-lg{padding:16px 36px;font-size:15.5px;border-radius:12px}
-.btn-white{background:#fff;color:var(--blue)}
-.btn-white:hover{background:#EEF4FF;transform:translateY(-1px);box-shadow:0 8px 28px rgba(0,0,0,.15)}
-.btn-outline-white{background:transparent;color:#fff;border:1.5px solid rgba(255,255,255,.4)}
-.btn-outline-white:hover{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.65)}
+/* ── GLASS UTILITY ───────────────────────────────────────────────────────── */
+.glass{background:var(--g1);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);border:1px solid var(--gb)}
+.glass-md{background:var(--g2);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);border:1px solid var(--gb)}
 
-/* Badge */
-.badge{display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border-radius:99px;font-size:11.5px;font-weight:600}
-.badge-teal{background:var(--teal-dim);color:var(--teal)}
-.badge-blue{background:var(--blue-dim);color:var(--blue)}
-.badge-amber{background:var(--amber-dim);color:var(--amber)}
-.badge-red{background:rgba(244,63,94,.12);color:var(--red)}
+/* ── BUTTONS ─────────────────────────────────────────────────────────────── */
+.btn{display:inline-flex;align-items:center;gap:8px;padding:13px 28px;border-radius:12px;font-size:14.5px;font-weight:600;transition:all .22s var(--ease);white-space:nowrap;cursor:pointer}
+.btn-primary{background:linear-gradient(135deg,#7C3AED 0%,#4338CA 100%);color:#fff;border:1px solid rgba(124,58,237,.4);box-shadow:0 0 24px rgba(124,58,237,.35)}
+.btn-primary:hover{background:linear-gradient(135deg,#8B5CF6 0%,#6366F1 100%);box-shadow:0 0 40px rgba(124,58,237,.55);transform:translateY(-2px)}
+.btn-glass{background:var(--g2);color:var(--text);border:1px solid var(--gb);backdrop-filter:var(--blur-sm);-webkit-backdrop-filter:var(--blur-sm)}
+.btn-glass:hover{background:var(--g3);border-color:var(--gb-hi);transform:translateY(-1px)}
+.btn-lg{padding:16px 36px;font-size:15.5px;border-radius:14px}
+.btn-white{background:#fff;color:#5B21B6;font-weight:700}
+.btn-white:hover{background:#EEF2FF;transform:translateY(-2px);box-shadow:0 8px 28px rgba(0,0,0,.15)}
+.btn-outline-white{background:rgba(255,255,255,.1);color:#fff;border:1.5px solid rgba(255,255,255,.3);backdrop-filter:blur(12px)}
+.btn-outline-white:hover{background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.5)}
 
-/* Live dot */
-.ldot{width:7px;height:7px;border-radius:50%;background:var(--teal);animation:ldot-pulse 2s ease infinite;flex-shrink:0}
-@keyframes ldot-pulse{0%,100%{box-shadow:0 0 0 0 rgba(14,207,177,.5)}50%{box-shadow:0 0 0 6px rgba(14,207,177,0)}}
-
-/* Divider */
-.divider{height:1px;background:var(--border);margin:0}
-
-/* Section header */
-.sec-head{text-align:center;margin-bottom:64px}
-.sec-head h2{margin-bottom:14px}
-.sec-head p{max-width:540px;margin:0 auto;font-size:16px}
-
-/* Cards base */
-.card{background:var(--surf);border:1px solid var(--border);border-radius:var(--r-lg);padding:28px}
-
-/* Reveal */
-.reveal{opacity:0;transform:translateY(22px);transition:opacity .65s var(--ease),transform .65s var(--ease)}
+/* ── BADGES ──────────────────────────────────────────────────────────────── */
+.badge{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:99px;font-size:11.5px;font-weight:600}
+.badge-violet{background:var(--vdim);color:var(--violet);border:1px solid rgba(167,139,250,.2)}
+.badge-teal{background:var(--tdim);color:var(--teal);border:1px solid rgba(45,212,191,.2)}
+.badge-blue{background:var(--bdim);color:var(--blue);border:1px solid rgba(96,165,250,.2)}
+.badge-amber{background:var(--adim);color:var(--amber);border:1px solid rgba(251,211,77,.2)}
+.badge-red{background:rgba(251,113,133,.12);color:var(--red);border:1px solid rgba(251,113,133,.2)}
+.ldot{width:7px;height:7px;border-radius:50%;background:var(--teal);animation:pulse 2s ease infinite;flex-shrink:0}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(45,212,191,.6)}50%{box-shadow:0 0 0 6px rgba(45,212,191,0)}}
+.reveal{opacity:0;transform:translateY(24px);transition:opacity .7s var(--ease),transform .7s var(--ease)}
 .reveal.in{opacity:1;transform:none}
 
-/* ═══════════════════════════════════════════════════════
-   NAV
-═══════════════════════════════════════════════════════ */
-.nav{
-  position:sticky;top:0;z-index:200;
-  padding:0 28px;
-  background:rgba(6,13,31,.82);
-  backdrop-filter:blur(18px) saturate(180%);
-  border-bottom:1px solid var(--border);
-  transition:background .25s;
-}
-[data-theme="light"] .nav{background:rgba(240,245,255,.88)}
-.nav-inner{max-width:1200px;margin:0 auto;height:66px;display:flex;align-items:center;gap:0}
-.logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:18px;letter-spacing:-.03em;margin-right:auto}
-.logo-mark{
-  width:34px;height:34px;background:var(--blue);border-radius:9px;
-  display:flex;align-items:center;justify-content:center;flex-shrink:0
-}
+/* ── NAV ─────────────────────────────────────────────────────────────────── */
+.nav{position:sticky;top:0;z-index:200;padding:0 28px;background:rgba(6,8,24,.6);backdrop-filter:blur(32px) saturate(200%);-webkit-backdrop-filter:blur(32px) saturate(200%);border-bottom:1px solid var(--gb)}
+[data-theme="light"] .nav{background:rgba(238,242,255,.75)}
+.nav-inner{max-width:1200px;margin:0 auto;height:66px;display:flex;align-items:center}
+.logo{display:flex;align-items:center;gap:11px;font-weight:800;font-size:18.5px;letter-spacing:-.03em;margin-right:auto}
+.logo-mark{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#7C3AED 0%,#4338CA 100%);display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 0 18px rgba(124,58,237,.5)}
+.logo-name{background:linear-gradient(135deg,#C4B5FD 0%,#818CF8 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+[data-theme="light"] .logo-name{background:linear-gradient(135deg,#7C3AED 0%,#4338CA 100%);-webkit-background-clip:text;background-clip:text}
 .nav-links{display:flex;align-items:center;gap:30px;list-style:none}
 .nav-links a{font-size:14px;font-weight:500;color:var(--text-2);transition:color .2s}
 .nav-links a:hover{color:var(--text)}
 .nav-acts{display:flex;align-items:center;gap:10px;margin-left:28px}
-.theme-btn{
-  width:36px;height:36px;display:flex;align-items:center;justify-content:center;
-  border-radius:8px;border:1px solid var(--border);color:var(--text-2);
-  transition:all .2s;flex-shrink:0
-}
-.theme-btn:hover{color:var(--text);border-color:var(--blue);background:var(--blue-dim)}
-@media(max-width:768px){.nav-links,.nav-acts .btn-ghost{display:none}}
+.theme-btn{width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:9px;border:1px solid var(--gb);color:var(--text-2);background:var(--g1);backdrop-filter:var(--blur-sm);-webkit-backdrop-filter:var(--blur-sm);transition:all .2s}
+.theme-btn:hover{color:var(--text);border-color:var(--gb-hi);background:var(--g2)}
+@media(max-width:768px){.nav-links,.nav-acts .btn-glass{display:none}}
 
-/* ═══════════════════════════════════════════════════════
-   HERO
-═══════════════════════════════════════════════════════ */
-.hero{padding:76px 0 96px;overflow:hidden;position:relative}
-.hero::before{
-  content:'';position:absolute;inset:0;
-  background:radial-gradient(ellipse 65% 70% at 72% 55%,rgba(30,91,255,.09) 0%,transparent 68%);
-  pointer-events:none
-}
-[data-theme="light"] .hero::before{background:radial-gradient(ellipse 65% 70% at 72% 55%,rgba(30,91,255,.06) 0%,transparent 68%)}
-
-.hero-inner{display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:center;position:relative}
-.hero-eyebrow{display:flex;align-items:center;gap:8px;margin-bottom:18px}
-.hero-title{margin-bottom:20px}
-.hero-title em{font-style:normal;color:var(--blue)}
-.hero-title .teal{color:var(--teal)}
-.hero-sub{font-size:17px;max-width:480px;line-height:1.75;margin-bottom:36px}
+/* ── HERO ────────────────────────────────────────────────────────────────── */
+.hero{padding:80px 0 100px;overflow:visible}
+.hero-inner{display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:center}
+.hero-eyebrow{display:flex;align-items:center;gap:9px;margin-bottom:20px}
+.hero-title{margin-bottom:22px}
+.hero-sub{font-size:17px;max-width:480px;line-height:1.75;margin-bottom:38px}
 .hero-cta{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-.hero-note{font-size:12px;color:var(--text-3);margin-top:14px;display:flex;align-items:center;gap:6px}
+.hero-note{font-size:12px;color:var(--text-3);margin-top:16px;display:flex;align-items:center;gap:6px}
 .hero-note svg{color:var(--green)}
 
-/* Chat demo */
-.chat-win{background:var(--surf);border:1px solid var(--border);border-radius:24px;overflow:hidden;box-shadow:0 40px 100px rgba(0,0,0,.5),0 0 0 1px var(--border)}
-[data-theme="light"] .chat-win{box-shadow:0 20px 60px rgba(0,0,0,.12),0 0 0 1px var(--border)}
-.chat-hdr{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;background:var(--panel)}
-.chat-av{width:32px;height:32px;background:var(--blue);border-radius:50%;display:flex;align-items:center;justify-content:center}
+/* Glass chat window */
+.chat-win{background:var(--g1);backdrop-filter:var(--blur-lg);-webkit-backdrop-filter:var(--blur-lg);border:1px solid var(--gb);border-radius:26px;overflow:hidden;box-shadow:0 40px 120px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.08)}
+[data-theme="light"] .chat-win{box-shadow:0 24px 80px rgba(80,60,200,.14),0 0 0 1px var(--gb)}
+.chat-hdr{padding:14px 18px;border-bottom:1px solid var(--gb);display:flex;align-items:center;gap:10px;background:var(--g2)}
+.chat-av{width:32px;height:32px;background:linear-gradient(135deg,#7C3AED,#4338CA);border-radius:50%;display:flex;align-items:center;justify-content:center}
 .chat-info{flex:1}
 .chat-name{font-weight:700;font-size:13.5px;line-height:1.2}
 .chat-status{font-size:11.5px;color:var(--teal);display:flex;align-items:center;gap:5px}
 .chat-channels{display:flex;gap:5px;margin-left:auto}
 .ch-dot{width:22px;height:22px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px}
-
 .chat-body{height:320px;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:8px}
-.msg{
-  max-width:82%;padding:9px 14px;border-radius:14px;font-size:13px;line-height:1.55;
-  opacity:0;transform:translateY(8px);transition:opacity .35s,transform .35s
-}
+.msg{max-width:82%;padding:9px 14px;border-radius:14px;font-size:13px;line-height:1.55;opacity:0;transform:translateY(8px);transition:opacity .35s,transform .35s}
 .msg.show{opacity:1;transform:none}
-.msg.user{align-self:flex-end;background:var(--blue);color:#fff;border-radius:14px 14px 3px 14px}
-.msg.bot{align-self:flex-start;background:var(--panel);border-radius:14px 14px 14px 3px}
+.msg.user{align-self:flex-end;background:linear-gradient(135deg,#7C3AED,#5B21B6);color:#fff;border-radius:14px 14px 3px 14px}
+.msg.bot{align-self:flex-start;background:var(--g2);backdrop-filter:blur(12px);border:1px solid var(--gb);border-radius:14px 14px 14px 3px}
 .msg.bot strong{color:var(--text)}
-.typing-ind{align-self:flex-start;background:var(--panel);border-radius:14px;padding:11px 14px;display:none;gap:4px;align-items:center}
+.typing-ind{align-self:flex-start;background:var(--g2);backdrop-filter:blur(12px);border:1px solid var(--gb);border-radius:14px;padding:11px 14px;display:none;gap:4px;align-items:center}
 .typing-ind.on{display:flex}
 .typing-ind span{width:7px;height:7px;background:var(--text-3);border-radius:50%;animation:tb 1.2s ease infinite}
 .typing-ind span:nth-child(2){animation-delay:.2s}
 .typing-ind span:nth-child(3){animation-delay:.4s}
-@keyframes tb{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px);background:var(--blue)}}
-
-.pcard{
-  background:var(--surf);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-top:4px;font-size:12px
-}
-[data-theme="dark"] .pcard{background:rgba(8,18,40,.8)}
+@keyframes tb{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px);background:var(--violet)}}
+.pcard{background:var(--g2);backdrop-filter:blur(12px);border:1px solid var(--gb);border-radius:12px;padding:11px 13px;margin-top:4px;font-size:12px}
 .pcard-name{font-weight:700;font-size:13px;color:var(--text);margin-bottom:2px}
-.pcard-price{color:var(--blue);font-weight:700;font-size:14px}
+.pcard-price{color:var(--violet);font-weight:700;font-size:14px}
 .pcard-spec{color:var(--text-3);font-size:11px;margin-top:2px}
-.pcard-badge{display:inline-block;background:var(--teal-dim);color:var(--teal);font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;margin-top:5px}
+.pcard-badge{display:inline-block;background:var(--tdim);color:var(--teal);font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;margin-top:5px;border:1px solid rgba(45,212,191,.2)}
+.chat-inp{padding:11px 14px;border-top:1px solid var(--gb);display:flex;gap:8px;align-items:center;background:var(--g1)}
+.inp-fake{flex:1;background:var(--g2);border:1px solid var(--gb);border-radius:8px;padding:8px 12px;font-size:12.5px;color:var(--text-3);font-family:var(--font)}
+.send-btn{width:32px;height:32px;background:linear-gradient(135deg,#7C3AED,#4338CA);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 0 12px rgba(124,58,237,.4)}
 
-.chat-inp{padding:11px 14px;border-top:1px solid var(--border);display:flex;gap:8px;align-items:center;background:var(--panel)}
-.inp-fake{flex:1;background:var(--surf);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:12.5px;color:var(--text-3);font-family:var(--font)}
-.send-btn{width:32px;height:32px;background:var(--blue);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-
-/* Floating metric chips */
-.float-chip{
-  position:absolute;background:var(--surf);border:1px solid var(--border);border-radius:14px;padding:11px 16px;
-  box-shadow:0 8px 32px rgba(0,0,0,.3);
-}
+/* Floating glass chips */
+.float-chip{position:absolute;background:var(--g2);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);border:1px solid var(--gb);border-radius:16px;padding:12px 17px;box-shadow:0 12px 40px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.08)}
 .fc-1{bottom:56px;left:-44px;animation:flt 4s ease-in-out infinite}
 .fc-2{top:20px;right:-16px;animation:flt 4s ease-in-out infinite;animation-delay:2s}
 @keyframes flt{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
 .chip-val{font-family:var(--mono);font-size:21px;font-weight:700;line-height:1;color:var(--text)}
 .chip-lbl{font-size:10.5px;color:var(--text-3);font-weight:500;margin-top:3px}
 .chip-delta{font-size:10.5px;color:var(--green);font-weight:600;margin-top:1px;display:flex;align-items:center;gap:3px}
-
 @media(max-width:900px){.hero-inner{grid-template-columns:1fr}.hero-demo{display:none}}
 
-/* ═══════════════════════════════════════════════════════
-   CHANNELS STRIP
-═══════════════════════════════════════════════════════ */
-.channels{padding:36px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
-.ch-label{text-align:center;font-size:11.5px;color:var(--text-3);font-weight:500;letter-spacing:.07em;text-transform:uppercase;margin-bottom:22px}
+/* ── CHANNELS ────────────────────────────────────────────────────────────── */
+.channels{padding:38px 0}
+.ch-label{text-align:center;font-size:11.5px;color:var(--text-3);font-weight:500;letter-spacing:.08em;text-transform:uppercase;margin-bottom:24px}
 .ch-row{display:flex;align-items:center;justify-content:center;gap:36px;flex-wrap:wrap}
 .ch-item{display:flex;align-items:center;gap:9px;font-size:13.5px;font-weight:600;color:var(--text-2);transition:color .2s}
 .ch-item:hover{color:var(--text)}
 .ch-ico{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 
-/* ═══════════════════════════════════════════════════════
-   STATS
-═══════════════════════════════════════════════════════ */
-.stats-wrap{
-  display:grid;grid-template-columns:repeat(3,1fr);
-  gap:1px;background:var(--border);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden
-}
-.stat-cell{background:var(--surf);padding:40px 32px;text-align:center}
-.stat-num{
-  font-family:var(--mono);font-size:clamp(40px,6vw,62px);font-weight:700;
-  color:var(--text);line-height:1;font-variant-numeric:tabular-nums;margin-bottom:8px
-}
+/* ── STATS ───────────────────────────────────────────────────────────────── */
+.stats-wrap{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--gb);border:1px solid var(--gb);border-radius:var(--r-lg);overflow:hidden}
+.stat-cell{background:var(--g1);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);padding:44px 32px;text-align:center}
+.stat-num{font-family:var(--mono);font-size:clamp(40px,6vw,64px);font-weight:700;color:var(--text);line-height:1;font-variant-numeric:tabular-nums;margin-bottom:8px}
 .stat-num sup{font-size:.45em;color:var(--text-2);vertical-align:super}
-.stat-num .suf{font-size:.55em;color:var(--blue)}
+.stat-num .suf{font-size:.55em;color:var(--violet)}
 .stat-lbl{font-size:13.5px;color:var(--text-3);font-weight:500}
 @media(max-width:600px){.stats-wrap{grid-template-columns:1fr}.stat-cell{padding:28px}}
 
-/* ═══════════════════════════════════════════════════════
-   FEATURES
-═══════════════════════════════════════════════════════ */
+/* ── FEATURES ────────────────────────────────────────────────────────────── */
 .feat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
-.feat-card{background:var(--surf);border:1px solid var(--border);border-radius:var(--r-lg);padding:32px;transition:border-color .2s,transform .2s}
-.feat-card:hover{border-color:var(--blue);transform:translateY(-2px)}
-.feat-ico{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:20px}
-.ico-blue{background:var(--blue-dim);color:var(--blue)}
-.ico-teal{background:var(--teal-dim);color:var(--teal)}
-.ico-amber{background:var(--amber-dim);color:var(--amber)}
-.ico-violet{background:rgba(139,92,246,.12);color:#8b5cf6}
+.feat-card{background:var(--g1);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);border:1px solid var(--gb);border-radius:var(--r-lg);padding:34px;transition:border-color .25s,background .25s,transform .25s,box-shadow .25s}
+.feat-card:hover{background:var(--g2);border-color:var(--gb-hi);transform:translateY(-3px);box-shadow:0 20px 60px rgba(0,0,0,.2)}
+.feat-ico{width:50px;height:50px;border-radius:13px;display:flex;align-items:center;justify-content:center;margin-bottom:20px}
+.ico-violet{background:var(--vdim);color:var(--violet);border:1px solid rgba(167,139,250,.2)}
+.ico-teal{background:var(--tdim);color:var(--teal);border:1px solid rgba(45,212,191,.2)}
+.ico-amber{background:var(--adim);color:var(--amber);border:1px solid rgba(251,211,77,.2)}
+.ico-blue{background:var(--bdim);color:var(--blue);border:1px solid rgba(96,165,250,.2)}
 .feat-card h3{margin-bottom:10px}
 .feat-card p{font-size:14px}
 @media(max-width:700px){.feat-grid{grid-template-columns:1fr}}
 
-/* ═══════════════════════════════════════════════════════
-   INDUSTRIES
-═══════════════════════════════════════════════════════ */
-.industries{background:linear-gradient(180deg,transparent 0%,var(--surf) 25%,var(--surf) 75%,transparent 100%)}
+/* ── INDUSTRIES ──────────────────────────────────────────────────────────── */
 .ind-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
-.ind-card{
-  background:var(--panel);border:1px solid var(--border);border-radius:var(--r);
-  padding:20px 16px;transition:all .22s;cursor:default
-}
-.ind-card:hover{border-color:var(--teal);background:var(--teal-dim);transform:translateY(-3px);box-shadow:0 8px 24px rgba(14,207,177,.08)}
-.ind-ico{width:40px;height:40px;border-radius:10px;background:var(--surf);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;margin-bottom:13px;font-size:18px}
+.ind-card{background:var(--g1);backdrop-filter:var(--blur-sm);-webkit-backdrop-filter:var(--blur-sm);border:1px solid var(--gb);border-radius:var(--r);padding:20px 16px;transition:all .22s;cursor:default}
+.ind-card:hover{background:var(--g2);border-color:rgba(45,212,191,.3);transform:translateY(-4px);box-shadow:0 12px 36px rgba(45,212,191,.07)}
+.ind-ico{width:40px;height:40px;border-radius:10px;background:var(--g2);border:1px solid var(--gb);display:flex;align-items:center;justify-content:center;margin-bottom:13px;font-size:18px}
 .ind-card h4{font-size:13.5px;margin-bottom:9px}
 .ind-uses{list-style:none;display:flex;flex-direction:column;gap:4px}
 .ind-uses li{font-size:11.5px;color:var(--text-3);display:flex;align-items:center;gap:5px}
@@ -300,9 +240,7 @@ p{color:var(--text-2);line-height:1.75}
 @media(max-width:1000px){.ind-grid{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:640px){.ind-grid{grid-template-columns:repeat(2,1fr)}}
 
-/* ═══════════════════════════════════════════════════════
-   DASHBOARD PREVIEW
-═══════════════════════════════════════════════════════ */
+/* ── DASHBOARD ───────────────────────────────────────────────────────────── */
 .dash-split{display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:center}
 .dash-copy h2{margin-bottom:14px}
 .dash-copy p{margin-bottom:20px}
@@ -311,121 +249,89 @@ p{color:var(--text-2);line-height:1.75}
 .df-dot{width:8px;height:8px;border-radius:50%;background:var(--teal);flex-shrink:0;margin-top:6px}
 .df-item p{font-size:13.5px}
 .df-item strong{color:var(--text);display:block;font-size:13.5px;font-weight:600;margin-bottom:1px}
-
-.dash-frame{background:var(--surf);border:1px solid var(--border);border-radius:var(--r-xl);overflow:hidden;box-shadow:0 40px 100px rgba(0,0,0,.4)}
-[data-theme="light"] .dash-frame{box-shadow:0 20px 60px rgba(0,0,0,.10)}
-.df-bar{background:var(--panel);border-bottom:1px solid var(--border);padding:11px 18px;display:flex;align-items:center;gap:6px}
+.dash-frame{background:var(--g1);backdrop-filter:var(--blur-lg);-webkit-backdrop-filter:var(--blur-lg);border:1px solid var(--gb);border-radius:var(--r-xl);overflow:hidden;box-shadow:0 48px 120px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.08)}
+[data-theme="light"] .dash-frame{box-shadow:0 24px 80px rgba(80,60,200,.12)}
+.df-bar{background:var(--g2);border-bottom:1px solid var(--gb);padding:11px 18px;display:flex;align-items:center;gap:6px}
 .wdot{width:10px;height:10px;border-radius:50%}
-.wdot.r{background:#F43F5E}.wdot.y{background:#F5A623}.wdot.g{background:#22C55E}
+.wdot.r{background:#F87171}.wdot.y{background:#FBD34D}.wdot.g{background:#34D399}
 .df-bar-title{margin-left:6px;font-size:11.5px;color:var(--text-3);font-family:var(--mono)}
 .df-content{padding:16px;display:flex;flex-direction:column;gap:12px}
-
 .mini-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
-.ms{background:var(--panel);border:1px solid var(--border);border-radius:9px;padding:12px}
+.ms{background:var(--g2);border:1px solid var(--gb);border-radius:10px;padding:12px;backdrop-filter:var(--blur-sm);-webkit-backdrop-filter:var(--blur-sm)}
 .ms .mlbl{font-size:9.5px;color:var(--teal);font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:5px}
 .ms .mval{font-family:var(--mono);font-size:20px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
 .ms .mdelta{font-size:10px;margin-top:3px}
-
 .chart-row{display:grid;grid-template-columns:2fr 1fr;gap:8px}
-.chart-panel{background:var(--panel);border:1px solid var(--border);border-radius:9px;padding:13px}
+.chart-panel{background:var(--g2);border:1px solid var(--gb);border-radius:10px;padding:13px;backdrop-filter:var(--blur-sm);-webkit-backdrop-filter:var(--blur-sm)}
 .cp-title{font-size:11px;font-weight:600;color:var(--text-2);margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
 .cp-val{font-family:var(--mono);color:var(--teal);font-weight:600}
 canvas{display:block}
-
 .intent-bars{display:flex;flex-direction:column;gap:7px}
 .ibar{display:flex;align-items:center;gap:7px;font-size:10.5px}
 .ibar-lbl{width:72px;color:var(--text-3);flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.ibar-track{flex:1;height:5px;background:rgba(255,255,255,.06);border-radius:99px;overflow:hidden}
+.ibar-track{flex:1;height:5px;background:rgba(255,255,255,.05);border-radius:99px;overflow:hidden}
 [data-theme="light"] .ibar-track{background:rgba(0,0,0,.07)}
 .ibar-fill{height:100%;border-radius:99px}
 .ibar-pct{width:28px;text-align:right;font-family:var(--mono);font-size:10px;color:var(--text-2);flex-shrink:0}
-
-.session-panel{background:var(--panel);border:1px solid var(--border);border-radius:9px;overflow:hidden}
-.sp-head{padding:9px 12px;border-bottom:1px solid var(--border);font-size:10.5px;font-weight:600;color:var(--text-2);display:flex;justify-content:space-between}
-.sp-row{padding:8px 12px;border-bottom:1px solid var(--border-s);display:flex;align-items:center;gap:8px;font-size:11px}
+.session-panel{background:var(--g2);border:1px solid var(--gb);border-radius:10px;overflow:hidden;backdrop-filter:var(--blur-sm);-webkit-backdrop-filter:var(--blur-sm)}
+.sp-head{padding:9px 12px;border-bottom:1px solid var(--gb);font-size:10.5px;font-weight:600;color:var(--text-2);display:flex;justify-content:space-between}
+.sp-row{padding:8px 12px;border-bottom:1px solid var(--gb-s);display:flex;align-items:center;gap:8px;font-size:11px}
 .sp-row:last-child{border-bottom:none}
 .sdot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
-.sdot.alive{background:var(--teal);animation:ldot-pulse 2s ease infinite}
+.sdot.alive{background:var(--teal);animation:pulse 2s ease infinite}
 .sdot.esc{background:var(--red)}
 .sname{flex:1;font-weight:500;color:var(--text)}
 .stime{font-family:var(--mono);font-size:10px;color:var(--text-3)}
-
 @media(max-width:860px){.dash-split{grid-template-columns:1fr}}
 
-/* ═══════════════════════════════════════════════════════
-   OMNICHANNEL
-═══════════════════════════════════════════════════════ */
+/* ── OMNICHANNEL ─────────────────────────────────────────────────────────── */
 .omni-split{display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:center}
-.omni-visual{position:relative}
 .omni-ring{width:340px;height:340px;position:relative;margin:0 auto}
-.omni-hub{
-  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
-  width:76px;height:76px;background:var(--blue);border-radius:18px;
-  display:flex;align-items:center;justify-content:center;z-index:3;
-  box-shadow:0 0 0 14px var(--blue-dim),0 0 50px rgba(30,91,255,.3)
-}
-.omni-node{
-  position:absolute;width:56px;height:56px;border-radius:14px;
-  border:1px solid var(--border);background:var(--surf);
-  display:flex;align-items:center;justify-content:center;font-size:22px;
-  box-shadow:0 4px 16px rgba(0,0,0,.2);transition:transform .25s,border-color .25s;z-index:2
-}
-.omni-node:hover{transform:scale(1.1)!important;border-color:var(--teal)}
+.omni-hub{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:76px;height:76px;background:linear-gradient(135deg,#7C3AED,#4338CA);border-radius:18px;display:flex;align-items:center;justify-content:center;z-index:3;box-shadow:0 0 0 14px var(--vdim),0 0 50px rgba(124,58,237,.35)}
+.omni-node{position:absolute;width:56px;height:56px;border-radius:14px;border:1px solid var(--gb);background:var(--g2);backdrop-filter:var(--blur-sm);-webkit-backdrop-filter:var(--blur-sm);display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 4px 20px rgba(0,0,0,.3);transition:transform .25s,border-color .25s;z-index:2}
+.omni-node:hover{transform:scale(1.12)!important;border-color:var(--teal)}
 .omni-svg-lines{position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none}
-
-.omni-feats{display:flex;flex-direction:column;gap:22px}
+.omni-feats{display:flex;flex-direction:column;gap:24px}
 .ofeat{display:flex;gap:14px;align-items:flex-start}
-.ofeat-ico{width:42px;height:42px;border-radius:10px;background:var(--teal-dim);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--teal)}
+.ofeat-ico{width:44px;height:44px;border-radius:11px;background:var(--tdim);border:1px solid rgba(45,212,191,.2);backdrop-filter:var(--blur-sm);-webkit-backdrop-filter:var(--blur-sm);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--teal)}
 .ofeat h4{margin-bottom:4px}
 .ofeat p{font-size:13.5px}
 @media(max-width:860px){.omni-split{grid-template-columns:1fr}.omni-visual{display:none}}
 
-/* ═══════════════════════════════════════════════════════
-   PRICING
-═══════════════════════════════════════════════════════ */
-.pricing-bg{background:linear-gradient(180deg,transparent 0%,var(--surf) 25%,var(--surf) 75%,transparent 100%)}
-.price-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:64px}
-.price-card{background:var(--panel);border:1px solid var(--border);border-radius:var(--r-xl);padding:36px 30px;position:relative;transition:transform .2s,border-color .2s}
-.price-card:hover{transform:translateY(-4px)}
-.price-card.hot{border-color:var(--blue);background:linear-gradient(160deg,var(--blue-dim) 0%,var(--panel) 55%)}
-.price-badge{position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--amber);color:#111;font-size:11px;font-weight:700;padding:3px 12px;border-radius:99px;white-space:nowrap}
-.price-tier{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-3);margin-bottom:8px}
-.price-card.hot .price-tier{color:var(--blue)}
+/* ── PRICING ─────────────────────────────────────────────────────────────── */
+.price-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:68px}
+.price-card{background:var(--g1);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);border:1px solid var(--gb);border-radius:var(--r-xl);padding:36px 30px;position:relative;transition:transform .22s,border-color .22s,box-shadow .22s}
+.price-card:hover{transform:translateY(-4px);border-color:var(--gb-hi)}
+.price-card.hot{border-color:rgba(167,139,250,.3);background:rgba(124,58,237,.06);box-shadow:0 0 40px rgba(124,58,237,.12)}
+.price-card.hot:hover{box-shadow:0 0 60px rgba(124,58,237,.22)}
+.price-badge{position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#A78BFA,#7C3AED);color:#fff;font-size:11px;font-weight:700;padding:3px 14px;border-radius:99px;white-space:nowrap}
+.price-tier{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text-3);margin-bottom:8px}
+.price-card.hot .price-tier{color:var(--violet)}
 .price-amt{font-size:36px;font-weight:800;font-family:var(--mono);line-height:1;margin-bottom:4px;font-variant-numeric:tabular-nums}
 .price-amt .cur{font-size:18px;vertical-align:super;color:var(--text-2)}
 .price-period{font-size:11.5px;color:var(--text-3);margin-bottom:22px}
-.price-desc{font-size:13.5px;color:var(--text-2);margin-bottom:24px;padding-bottom:22px;border-bottom:1px solid var(--border)}
+.price-desc{font-size:13.5px;color:var(--text-2);margin-bottom:24px;padding-bottom:22px;border-bottom:1px solid var(--gb)}
 .price-list{list-style:none;display:flex;flex-direction:column;gap:11px;margin-bottom:32px}
 .price-list li{display:flex;gap:9px;font-size:13.5px;color:var(--text-2);align-items:flex-start}
-.chk{width:18px;height:18px;border-radius:50%;background:var(--teal-dim);color:var(--teal);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:9.5px;font-weight:700;margin-top:1px}
-.price-card.hot .chk{background:var(--blue-dim);color:var(--blue)}
-.price-btn{
-  width:100%;padding:13px;border-radius:10px;font-size:14.5px;font-weight:600;
-  border:1px solid var(--border);background:transparent;color:var(--text);transition:all .2s;font-family:var(--font)
-}
-.price-btn:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-dim)}
-.price-card.hot .price-btn{background:var(--blue);color:#fff;border-color:var(--blue)}
-.price-card.hot .price-btn:hover{background:var(--blue-2)}
-@media(max-width:900px){.price-grid{grid-template-columns:1fr;max-width:400px;margin-inline:auto}}
+.chk{width:18px;height:18px;border-radius:50%;background:var(--tdim);color:var(--teal);border:1px solid rgba(45,212,191,.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:9.5px;font-weight:700;margin-top:1px}
+.price-card.hot .chk{background:var(--vdim);color:var(--violet);border-color:rgba(167,139,250,.2)}
+.price-btn{width:100%;padding:13px;border-radius:12px;font-size:14.5px;font-weight:600;border:1px solid var(--gb);background:var(--g2);backdrop-filter:var(--blur-sm);-webkit-backdrop-filter:var(--blur-sm);color:var(--text);transition:all .2s;font-family:var(--font);cursor:pointer}
+.price-btn:hover{border-color:var(--gb-hi);background:var(--g3)}
+.price-card.hot .price-btn{background:linear-gradient(135deg,#7C3AED,#4338CA);color:#fff;border-color:rgba(124,58,237,.5);box-shadow:0 0 20px rgba(124,58,237,.35)}
+.price-card.hot .price-btn:hover{background:linear-gradient(135deg,#8B5CF6,#6366F1);box-shadow:0 0 36px rgba(124,58,237,.5)}
+@media(max-width:900px){.price-grid{grid-template-columns:1fr;max-width:420px;margin-inline:auto}}
 
-/* ═══════════════════════════════════════════════════════
-   CTA
-═══════════════════════════════════════════════════════ */
-.cta-card{
-  background:linear-gradient(130deg,#1648E8 0%,#0B2FA8 100%);
-  border-radius:var(--r-xl);padding:76px 60px;text-align:center;position:relative;overflow:hidden
-}
-.cta-card::before{content:'';position:absolute;width:460px;height:460px;border-radius:50%;background:rgba(255,255,255,.05);top:-180px;right:-120px}
-.cta-card::after{content:'';position:absolute;width:240px;height:240px;border-radius:50%;background:rgba(255,255,255,.04);bottom:-100px;left:60px}
-.cta-card h2{color:#fff;margin-bottom:14px}
-.cta-card p{color:rgba(255,255,255,.72);margin-bottom:36px;font-size:17px;max-width:500px;margin-inline:auto}
-.cta-acts{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;position:relative;z-index:1}
-@media(max-width:600px){.cta-card{padding:50px 28px}}
+/* ── CTA ─────────────────────────────────────────────────────────────────── */
+.cta-card{background:var(--g1);backdrop-filter:var(--blur-lg);-webkit-backdrop-filter:var(--blur-lg);border:1px solid rgba(167,139,250,.2);border-radius:var(--r-xl);padding:80px 60px;text-align:center;position:relative;overflow:hidden}
+.cta-card::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% 50%,rgba(124,58,237,.18) 0%,transparent 70%);pointer-events:none}
+.cta-card h2,.cta-card p,.cta-acts{position:relative;z-index:1}
+.cta-card h2{margin-bottom:16px}
+.cta-card p{color:var(--text-2);margin-bottom:38px;font-size:17px;max-width:500px;margin-inline:auto}
+.cta-acts{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+@media(max-width:600px){.cta-card{padding:50px 24px}}
 
-/* ═══════════════════════════════════════════════════════
-   FOOTER
-═══════════════════════════════════════════════════════ */
-footer{padding:60px 0 36px;border-top:1px solid var(--border)}
+/* ── FOOTER ──────────────────────────────────────────────────────────────── */
+footer{padding:64px 0 40px;border-top:1px solid var(--gb)}
 .ft-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:48px;margin-bottom:48px}
 .ft-brand-name{display:flex;align-items:center;gap:9px;font-weight:800;font-size:17px;letter-spacing:-.03em;margin-bottom:14px}
 .ft-brand p{font-size:13.5px;max-width:260px;margin-bottom:18px}
@@ -433,24 +339,35 @@ footer{padding:60px 0 36px;border-top:1px solid var(--border)}
 .ft-col ul{list-style:none;display:flex;flex-direction:column;gap:10px}
 .ft-col ul a{font-size:13.5px;color:var(--text-3);transition:color .2s}
 .ft-col ul a:hover{color:var(--text)}
-.ft-bottom{padding-top:24px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--text-3)}
+.ft-bottom{padding-top:24px;border-top:1px solid var(--gb);display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--text-3)}
 .ft-socials{display:flex;gap:10px}
-.ft-social{width:32px;height:32px;border:1px solid var(--border);border-radius:7px;display:flex;align-items:center;justify-content:center;color:var(--text-3);transition:all .2s}
-.ft-social:hover{border-color:var(--blue);color:var(--blue)}
+.ft-social{width:32px;height:32px;border:1px solid var(--gb);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--text-3);transition:all .2s;background:var(--g1);backdrop-filter:var(--blur-sm);-webkit-backdrop-filter:var(--blur-sm)}
+.ft-social:hover{border-color:var(--violet);color:var(--violet)}
 @media(max-width:768px){.ft-grid{grid-template-columns:1fr 1fr}.ft-brand{grid-column:1/-1}}
 @media(max-width:480px){.ft-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 
-<!-- ── NAV ──────────────────────────────────────────────────────────────────── -->
+<!-- Background blobs -->
+<div class="blobs">
+  <div class="blob b1"></div>
+  <div class="blob b2"></div>
+  <div class="blob b3"></div>
+  <div class="blob b4"></div>
+</div>
+
+<!-- ── NAV ─────────────────────────────────────────────────────────────────── -->
 <nav class="nav">
   <div class="nav-inner">
     <a href="#" class="logo">
       <div class="logo-mark">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M8 9.5C8 8.12 9.12 7 10.5 7S13 8.12 13 9.5 11.88 12 10.5 12 8 10.88 8 9.5z" fill="white"/><path d="M12.5 15.5c0-1.38 1.12-2.5 2.5-2.5s2.5 1.12 2.5 2.5S16.38 18 15 18s-2.5-1.12-2.5-2.5z" fill="white" opacity=".8"/><path d="M10.5 12v1.5M13 9.5h2" stroke="white" stroke-width="1.8" stroke-linecap="round" opacity=".6"/></svg>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+          <polygon points="12,3 22,21 2,21" stroke="white" stroke-width="1.6" stroke-linejoin="round" fill="rgba(255,255,255,.12)"/>
+          <line x1="7" y1="15" x2="17" y2="15" stroke="white" stroke-width="1.6" stroke-linecap="round"/>
+        </svg>
       </div>
-      VietBot <span style="color:var(--teal)">AI</span>
+      <span class="logo-name">RynexaAI</span>
     </a>
     <ul class="nav-links">
       <li><a href="#tinh-nang">Tính năng</a></li>
@@ -464,36 +381,34 @@ footer{padding:60px 0 36px;border-top:1px solid var(--border)}
         <svg id="ico-sun" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
         <svg id="ico-moon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
       </button>
-      <a href="#bang-gia" class="btn btn-ghost" style="padding:9px 18px;font-size:13.5px">Xem giá</a>
+      <a href="#bang-gia" class="btn btn-glass" style="padding:9px 18px;font-size:13.5px">Xem giá</a>
       <a href="#lien-he" class="btn btn-primary" style="padding:9px 18px;font-size:13.5px">Dùng thử miễn phí</a>
     </div>
   </div>
 </nav>
 
-<!-- ── HERO ─────────────────────────────────────────────────────────────────── -->
+<!-- ── HERO ────────────────────────────────────────────────────────────────── -->
 <section class="hero">
   <div class="wrap">
     <div class="hero-inner">
       <div class="hero-copy reveal">
         <div class="hero-eyebrow">
           <div class="ldot"></div>
-          <span class="badge badge-teal">AI-Powered · Đa kênh · Thời gian thực</span>
+          <span class="badge badge-violet">AI-Powered · Đa kênh · Thời gian thực</span>
         </div>
         <h1 class="hero-title">
           Chatbot AI<br>
-          <em>thông minh nhất</em><br>
+          <span class="grad">thông minh nhất</span><br>
           cho doanh nghiệp<br>
-          <span class="teal">Việt Nam</span>
+          hiện đại
         </h1>
-        <p class="hero-sub">
-          Triển khai trợ lý AI tư vấn, chăm sóc khách hàng và bán hàng trên Zalo, Facebook Messenger, Website — chỉ trong 24 giờ. Không cần lập trình.
-        </p>
+        <p class="hero-sub">Triển khai trợ lý AI tư vấn, chăm sóc khách hàng và bán hàng trên Zalo, Facebook Messenger, Website — chỉ trong 24 giờ. Không cần lập trình.</p>
         <div class="hero-cta">
           <a href="#lien-he" class="btn btn-primary btn-lg">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
             Bắt đầu miễn phí
           </a>
-          <a href="#dashboard" class="btn btn-ghost btn-lg">Xem demo</a>
+          <a href="#dashboard" class="btn btn-glass btn-lg">Xem demo</a>
         </div>
         <p class="hero-note">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
@@ -501,8 +416,7 @@ footer{padding:60px 0 36px;border-top:1px solid var(--border)}
         </p>
       </div>
 
-      <div class="hero-demo reveal" style="position:relative">
-        <!-- Floating chips -->
+      <div class="hero-demo reveal" style="position:relative;transition-delay:.15s">
         <div class="float-chip fc-1">
           <div class="chip-val">1.2<span style="font-size:.5em;color:var(--text-2)">s</span></div>
           <div class="chip-lbl">Thời gian phản hồi</div>
@@ -515,28 +429,29 @@ footer{padding:60px 0 36px;border-top:1px solid var(--border)}
           <div class="chip-val" style="color:var(--teal)">98.4<span style="font-size:.5em">%</span></div>
           <div class="chip-lbl">Độ hài lòng CSAT</div>
         </div>
-
-        <!-- Chat window -->
         <div class="chat-win">
           <div class="chat-hdr">
             <div class="chat-av">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M8 9.5C8 8.12 9.12 7 10.5 7S13 8.12 13 9.5 11.88 12 10.5 12 8 10.88 8 9.5z" fill="white"/><path d="M12.5 15.5c0-1.38 1.12-2.5 2.5-2.5s2.5 1.12 2.5 2.5S16.38 18 15 18s-2.5-1.12-2.5-2.5z" fill="white" opacity=".8"/></svg>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <polygon points="12,3 22,21 2,21" stroke="white" stroke-width="1.5" stroke-linejoin="round" fill="rgba(255,255,255,.15)"/>
+                <line x1="7" y1="15" x2="17" y2="15" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
             </div>
             <div class="chat-info">
-              <div class="chat-name">TechShop AI</div>
+              <div class="chat-name">RynexaAI Assistant</div>
               <div class="chat-status"><div class="ldot"></div>Đang trực tuyến</div>
             </div>
             <div class="chat-channels">
-              <div class="ch-dot" style="background:#0068FF;border-radius:6px;color:#fff;font-weight:700">Z</div>
+              <div class="ch-dot" style="background:#0068FF;border-radius:6px;color:#fff;font-weight:700;font-size:12px">Z</div>
               <div class="ch-dot" style="background:#0866FF;border-radius:6px;color:#fff;font-size:9px">f</div>
-              <div class="ch-dot" style="background:var(--panel);border:1px solid var(--border);font-size:9px">🌐</div>
+              <div class="ch-dot" style="background:var(--g2);border:1px solid var(--gb);font-size:9px">🌐</div>
             </div>
           </div>
           <div class="chat-body" id="chat-body">
             <div class="typing-ind" id="typing"><span></span><span></span><span></span></div>
           </div>
           <div class="chat-inp">
-            <div class="inp-fake">Nhắn tin với TechShop AI...</div>
+            <div class="inp-fake">Nhắn tin với RynexaAI...</div>
             <div class="send-btn">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
             </div>
@@ -547,79 +462,35 @@ footer{padding:60px 0 36px;border-top:1px solid var(--border)}
   </div>
 </section>
 
-<!-- ── CHANNELS ──────────────────────────────────────────────────────────────── -->
+<!-- ── CHANNELS ────────────────────────────────────────────────────────────── -->
 <div class="divider"></div>
 <section class="channels">
   <div class="wrap">
     <p class="ch-label">Tích hợp liền mạch với các nền tảng phổ biến</p>
     <div class="ch-row">
-      <div class="ch-item">
-        <div class="ch-ico" style="background:#0068FF">
-          <svg width="20" height="20" viewBox="0 0 40 40" fill="none"><rect width="40" height="40" rx="10" fill="#0068FF"/><text x="50%" y="57%" font-size="20" text-anchor="middle" dominant-baseline="middle" fill="white" font-weight="800" font-family="Arial">Z</text></svg>
-        </div>
-        Zalo OA
-      </div>
-      <div class="ch-item">
-        <div class="ch-ico" style="background:#0866FF">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2C6.477 2 2 6.477 2 12c0 4.99 3.657 9.128 8.438 9.878V14.89h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.99 22 12c0-5.523-4.477-10-10-10z"/></svg>
-        </div>
-        Facebook Messenger
-      </div>
-      <div class="ch-item">
-        <div class="ch-ico" style="background:linear-gradient(135deg,#2AABEE,#229ED9)">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 0 0-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z"/></svg>
-        </div>
-        Telegram
-      </div>
-      <div class="ch-item">
-        <div class="ch-ico" style="background:linear-gradient(135deg,#25D366,#128C7E)">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>
-        </div>
-        WhatsApp
-      </div>
-      <div class="ch-item">
-        <div class="ch-ico" style="background:var(--blue)">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-        </div>
-        Website Widget
-      </div>
-      <div class="ch-item">
-        <div class="ch-ico" style="background:#FF6A00">
-          <svg width="20" height="20" viewBox="0 0 40 40" fill="none"><rect width="40" height="40" rx="10" fill="#FF6A00"/><text x="50%" y="56%" font-size="13" text-anchor="middle" dominant-baseline="middle" fill="white" font-weight="800" font-family="Arial">SP</text></svg>
-        </div>
-        Shopee Chat
-      </div>
-      <div class="ch-item">
-        <div class="ch-ico" style="background:var(--panel);border:1px solid var(--border)">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-2)" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
-        </div>
-        SMS / API
-      </div>
+      <div class="ch-item"><div class="ch-ico" style="background:#0068FF"><svg width="20" height="20" viewBox="0 0 40 40"><rect width="40" height="40" rx="10" fill="#0068FF"/><text x="50%" y="57%" font-size="20" text-anchor="middle" dominant-baseline="middle" fill="white" font-weight="800" font-family="Arial">Z</text></svg></div>Zalo OA</div>
+      <div class="ch-item"><div class="ch-ico" style="background:#0866FF"><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2C6.477 2 2 6.477 2 12c0 4.99 3.657 9.128 8.438 9.878V14.89h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.99 22 12c0-5.523-4.477-10-10-10z"/></svg></div>Facebook Messenger</div>
+      <div class="ch-item"><div class="ch-ico" style="background:linear-gradient(135deg,#2AABEE,#229ED9)"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 0 0-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z"/></svg></div>Telegram</div>
+      <div class="ch-item"><div class="ch-ico" style="background:linear-gradient(135deg,#25D366,#128C7E)"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg></div>WhatsApp</div>
+      <div class="ch-item"><div class="ch-ico" style="background:var(--violet-2)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></div>Website Widget</div>
+      <div class="ch-item"><div class="ch-ico" style="background:#FF6A00"><svg width="20" height="20" viewBox="0 0 40 40"><rect width="40" height="40" rx="10" fill="#FF6A00"/><text x="50%" y="56%" font-size="13" text-anchor="middle" dominant-baseline="middle" fill="white" font-weight="800" font-family="Arial">SP</text></svg></div>Shopee Chat</div>
+      <div class="ch-item"><div class="ch-ico" style="background:var(--g2);border:1px solid var(--gb)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-2)" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg></div>SMS / API</div>
     </div>
   </div>
 </section>
 
-<!-- ── STATS ─────────────────────────────────────────────────────────────────── -->
+<!-- ── STATS ───────────────────────────────────────────────────────────────── -->
 <section class="section">
   <div class="wrap">
     <div class="stats-wrap reveal">
-      <div class="stat-cell">
-        <div class="stat-num"><span class="num" data-target="1.2">0</span><sup>s</sup></div>
-        <div class="stat-lbl">Thời gian phản hồi trung bình</div>
-      </div>
-      <div class="stat-cell">
-        <div class="stat-num"><span class="num" data-target="96.8">0</span><span class="suf">%</span></div>
-        <div class="stat-lbl">Độ chính xác phân loại intent</div>
-      </div>
-      <div class="stat-cell">
-        <div class="stat-num"><span class="num" data-target="99.9">0</span><span class="suf">%</span></div>
-        <div class="stat-lbl">Uptime SLA đảm bảo</div>
-      </div>
+      <div class="stat-cell"><div class="stat-num"><span class="num" data-target="1.2">0</span><sup>s</sup></div><div class="stat-lbl">Thời gian phản hồi trung bình</div></div>
+      <div class="stat-cell"><div class="stat-num"><span class="num" data-target="96.8">0</span><span class="suf">%</span></div><div class="stat-lbl">Độ chính xác phân loại intent</div></div>
+      <div class="stat-cell"><div class="stat-num"><span class="num" data-target="99.9">0</span><span class="suf">%</span></div><div class="stat-lbl">Uptime SLA đảm bảo</div></div>
     </div>
   </div>
 </section>
 
-<!-- ── FEATURES ──────────────────────────────────────────────────────────────── -->
+<!-- ── FEATURES ────────────────────────────────────────────────────────────── -->
 <section class="section" id="tinh-nang">
   <div class="wrap">
     <div class="sec-head reveal">
@@ -629,30 +500,22 @@ footer{padding:60px 0 36px;border-top:1px solid var(--border)}
     </div>
     <div class="feat-grid">
       <div class="feat-card reveal">
-        <div class="feat-ico ico-blue">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17" stroke-linecap="round" stroke-width="2.5"/></svg>
-        </div>
+        <div class="feat-ico ico-violet"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17" stroke-linecap="round" stroke-width="2.5"/></svg></div>
         <h3>AI Hội Thoại Đa Vòng</h3>
         <p>Hiểu ngữ cảnh qua nhiều lượt hội thoại. Nhớ thông tin khách hàng, gợi ý sản phẩm phù hợp, xử lý yêu cầu phức tạp tự nhiên như người thật.</p>
       </div>
       <div class="feat-card reveal" style="transition-delay:.1s">
-        <div class="feat-ico ico-teal">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-        </div>
+        <div class="feat-ico ico-teal"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
         <h3>Live Monitor & Escalation</h3>
         <p>Theo dõi tất cả phiên hội thoại realtime. Nhân viên tiếp nhận chat khi cần, AI tự động chuyển giao khi phát hiện bất mãn hay yêu cầu đặc biệt.</p>
       </div>
       <div class="feat-card reveal" style="transition-delay:.15s">
-        <div class="feat-ico ico-amber">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
-        </div>
+        <div class="feat-ico ico-amber"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></div>
         <h3>Quản lý Catalogue & Đơn hàng</h3>
         <p>Import sản phẩm từ CSV, quản lý tồn kho, theo dõi trạng thái đơn hàng và tự động thông báo khách hàng qua WebSocket realtime.</p>
       </div>
       <div class="feat-card reveal" style="transition-delay:.2s">
-        <div class="feat-ico ico-violet">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
-        </div>
+        <div class="feat-ico ico-blue"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg></div>
         <h3>Analytics & CRM Tích Hợp</h3>
         <p>Dashboard đầy đủ metrics: conversion rate, CSAT, token usage, phân tích intent. Hồ sơ khách hàng tự động từ số điện thoại, lịch sử đơn hàng.</p>
       </div>
@@ -660,8 +523,8 @@ footer{padding:60px 0 36px;border-top:1px solid var(--border)}
   </div>
 </section>
 
-<!-- ── INDUSTRIES ─────────────────────────────────────────────────────────────── -->
-<section class="section industries" id="linh-vuc">
+<!-- ── INDUSTRIES ──────────────────────────────────────────────────────────── -->
+<section class="section" id="linh-vuc">
   <div class="wrap">
     <div class="sec-head reveal">
       <span class="label">Lĩnh vực áp dụng</span>
@@ -669,101 +532,21 @@ footer{padding:60px 0 36px;border-top:1px solid var(--border)}
       <p>Được cấu hình sẵn cho các usecase đặc thù của từng ngành, triển khai nhanh chỉ trong vài giờ.</p>
     </div>
     <div class="ind-grid reveal">
-      <div class="ind-card">
-        <div class="ind-ico">🛒</div>
-        <h4>Thương mại điện tử</h4>
-        <ul class="ind-uses">
-          <li>Tư vấn & gợi ý sản phẩm</li>
-          <li>Tra cứu đơn hàng, vận chuyển</li>
-          <li>Xử lý đổi trả, hoàn tiền</li>
-        </ul>
-      </div>
-      <div class="ind-card">
-        <div class="ind-ico">🏦</div>
-        <h4>Ngân hàng & Tài chính</h4>
-        <ul class="ind-uses">
-          <li>Kiểm tra số dư, giao dịch</li>
-          <li>Tư vấn sản phẩm tài chính</li>
-          <li>Hỗ trợ 24/7 không chờ đợi</li>
-        </ul>
-      </div>
-      <div class="ind-card">
-        <div class="ind-ico">🏥</div>
-        <h4>Y tế & Bệnh viện</h4>
-        <ul class="ind-uses">
-          <li>Đặt lịch khám tự động</li>
-          <li>Nhắc uống thuốc, tái khám</li>
-          <li>Sàng lọc triệu chứng ban đầu</li>
-        </ul>
-      </div>
-      <div class="ind-card">
-        <div class="ind-ico">📚</div>
-        <h4>Giáo dục</h4>
-        <ul class="ind-uses">
-          <li>Trợ giảng AI cá nhân hóa</li>
-          <li>Giải đáp bài tập, câu hỏi</li>
-          <li>Quản lý tuyển sinh tự động</li>
-        </ul>
-      </div>
-      <div class="ind-card">
-        <div class="ind-ico">🏨</div>
-        <h4>Du lịch & Khách sạn</h4>
-        <ul class="ind-uses">
-          <li>Đặt phòng, check-in</li>
-          <li>Gợi ý lịch trình du lịch</li>
-          <li>Hỗ trợ đa ngôn ngữ</li>
-        </ul>
-      </div>
-      <div class="ind-card">
-        <div class="ind-ico">⚖️</div>
-        <h4>Pháp lý & Tư vấn</h4>
-        <ul class="ind-uses">
-          <li>Tư vấn pháp luật cơ bản</li>
-          <li>Đặt lịch tư vấn luật sư</li>
-          <li>Tra cứu quy định, điều luật</li>
-        </ul>
-      </div>
-      <div class="ind-card">
-        <div class="ind-ico">🏭</div>
-        <h4>Doanh nghiệp nội bộ</h4>
-        <ul class="ind-uses">
-          <li>IT Helpdesk tự động</li>
-          <li>Hỏi đáp chính sách nhân sự</li>
-          <li>Tra cứu tài liệu (RAG)</li>
-        </ul>
-      </div>
-      <div class="ind-card">
-        <div class="ind-ico">🚚</div>
-        <h4>Logistics & Vận tải</h4>
-        <ul class="ind-uses">
-          <li>Theo dõi đơn hàng, lộ trình</li>
-          <li>Thông báo giao hàng tự động</li>
-          <li>Xử lý khiếu nại vận chuyển</li>
-        </ul>
-      </div>
-      <div class="ind-card">
-        <div class="ind-ico">🏛️</div>
-        <h4>Chính phủ & Dịch vụ công</h4>
-        <ul class="ind-uses">
-          <li>Hướng dẫn thủ tục hành chính</li>
-          <li>Tra cứu hồ sơ, tiến độ</li>
-          <li>Giải đáp chính sách, quy định</li>
-        </ul>
-      </div>
-      <div class="ind-card">
-        <div class="ind-ico">📞</div>
-        <h4>Chăm sóc khách hàng</h4>
-        <ul class="ind-uses">
-          <li>Trả lời FAQ tự động 24/7</li>
-          <li>Tiếp nhận & phân loại khiếu nại</li>
-          <li>Upsell, cross-sell thông minh</li>
-        </ul>
-      </div>
+      <div class="ind-card"><div class="ind-ico">🛒</div><h4>Thương mại điện tử</h4><ul class="ind-uses"><li>Tư vấn & gợi ý sản phẩm</li><li>Tra cứu đơn hàng, vận chuyển</li><li>Xử lý đổi trả, hoàn tiền</li></ul></div>
+      <div class="ind-card"><div class="ind-ico">🏦</div><h4>Ngân hàng & Tài chính</h4><ul class="ind-uses"><li>Kiểm tra số dư, giao dịch</li><li>Tư vấn sản phẩm tài chính</li><li>Hỗ trợ 24/7 không chờ đợi</li></ul></div>
+      <div class="ind-card"><div class="ind-ico">🏥</div><h4>Y tế & Bệnh viện</h4><ul class="ind-uses"><li>Đặt lịch khám tự động</li><li>Nhắc uống thuốc, tái khám</li><li>Sàng lọc triệu chứng ban đầu</li></ul></div>
+      <div class="ind-card"><div class="ind-ico">📚</div><h4>Giáo dục</h4><ul class="ind-uses"><li>Trợ giảng AI cá nhân hóa</li><li>Giải đáp bài tập, câu hỏi</li><li>Quản lý tuyển sinh tự động</li></ul></div>
+      <div class="ind-card"><div class="ind-ico">🏨</div><h4>Du lịch & Khách sạn</h4><ul class="ind-uses"><li>Đặt phòng, check-in</li><li>Gợi ý lịch trình du lịch</li><li>Hỗ trợ đa ngôn ngữ</li></ul></div>
+      <div class="ind-card"><div class="ind-ico">⚖️</div><h4>Pháp lý & Tư vấn</h4><ul class="ind-uses"><li>Tư vấn pháp luật cơ bản</li><li>Đặt lịch tư vấn luật sư</li><li>Tra cứu quy định, điều luật</li></ul></div>
+      <div class="ind-card"><div class="ind-ico">🏭</div><h4>Doanh nghiệp nội bộ</h4><ul class="ind-uses"><li>IT Helpdesk tự động</li><li>Hỏi đáp chính sách nhân sự</li><li>Tra cứu tài liệu (RAG)</li></ul></div>
+      <div class="ind-card"><div class="ind-ico">🚚</div><h4>Logistics & Vận tải</h4><ul class="ind-uses"><li>Theo dõi đơn hàng, lộ trình</li><li>Thông báo giao hàng tự động</li><li>Xử lý khiếu nại vận chuyển</li></ul></div>
+      <div class="ind-card"><div class="ind-ico">🏛️</div><h4>Chính phủ & Dịch vụ công</h4><ul class="ind-uses"><li>Hướng dẫn thủ tục hành chính</li><li>Tra cứu hồ sơ, tiến độ</li><li>Giải đáp chính sách, quy định</li></ul></div>
+      <div class="ind-card"><div class="ind-ico">📞</div><h4>Chăm sóc khách hàng</h4><ul class="ind-uses"><li>Trả lời FAQ tự động 24/7</li><li>Tiếp nhận & phân loại khiếu nại</li><li>Upsell, cross-sell thông minh</li></ul></div>
     </div>
   </div>
 </section>
 
-<!-- ── DASHBOARD PREVIEW ──────────────────────────────────────────────────────── -->
+<!-- ── DASHBOARD PREVIEW ────────────────────────────────────────────────────── -->
 <section class="section" id="dashboard">
   <div class="wrap">
     <div class="dash-split">
@@ -772,67 +555,35 @@ footer{padding:60px 0 36px;border-top:1px solid var(--border)}
         <h2>Kiểm soát toàn bộ<br>trong một màn hình</h2>
         <p>Dashboard realtime theo dõi mọi hoạt động của chatbot — từ phiên hội thoại đang diễn ra đến phân tích chi phí token, tỉ lệ chuyển đổi và độ hài lòng khách hàng.</p>
         <div class="dash-features">
-          <div class="df-item">
-            <div class="df-dot"></div>
-            <div><strong>Live Session Monitor</strong><p>Xem tất cả phiên đang hoạt động, can thiệp và nhắn tin trực tiếp với khách hàng</p></div>
-          </div>
-          <div class="df-item">
-            <div class="df-dot"></div>
-            <div><strong>Token & Cost Analytics</strong><p>Theo dõi chi phí AI theo agent, model, session — tối ưu ngân sách hiệu quả</p></div>
-          </div>
-          <div class="df-item">
-            <div class="df-dot"></div>
-            <div><strong>Escalation Management</strong><p>Quản lý yêu cầu hỗ trợ nhân viên, CSAT và phản hồi của khách hàng</p></div>
-          </div>
-          <div class="df-item">
-            <div class="df-dot"></div>
-            <div><strong>Cấu hình Runtime</strong><p>Thay đổi model AI, context window, temperature trực tiếp không cần deploy lại</p></div>
-          </div>
+          <div class="df-item"><div class="df-dot"></div><div><strong>Live Session Monitor</strong><p>Xem tất cả phiên đang hoạt động, can thiệp và nhắn tin trực tiếp với khách hàng</p></div></div>
+          <div class="df-item"><div class="df-dot"></div><div><strong>Token & Cost Analytics</strong><p>Theo dõi chi phí AI theo agent, model, session — tối ưu ngân sách hiệu quả</p></div></div>
+          <div class="df-item"><div class="df-dot"></div><div><strong>Escalation Management</strong><p>Quản lý yêu cầu hỗ trợ nhân viên, CSAT và phản hồi của khách hàng</p></div></div>
+          <div class="df-item"><div class="df-dot"></div><div><strong>Cấu hình Runtime</strong><p>Thay đổi model AI, context window, temperature trực tiếp không cần deploy lại</p></div></div>
         </div>
       </div>
-
       <div class="reveal" style="transition-delay:.15s">
         <div class="dash-frame">
           <div class="df-bar">
             <div class="wdot r"></div><div class="wdot y"></div><div class="wdot g"></div>
-            <span class="df-bar-title">VietBot Admin · Dashboard</span>
-            <div style="margin-left:auto;display:flex;align-items:center;gap:6px">
-              <div class="ldot"></div>
-              <span style="font-size:10.5px;color:var(--teal);font-family:var(--mono)">LIVE</span>
-            </div>
+            <span class="df-bar-title">RynexaAI Admin · Dashboard</span>
+            <div style="margin-left:auto;display:flex;align-items:center;gap:6px"><div class="ldot"></div><span style="font-size:10.5px;color:var(--teal);font-family:var(--mono)">LIVE</span></div>
           </div>
           <div class="df-content">
             <div class="mini-stats">
-              <div class="ms">
-                <div class="mlbl">Sessions</div>
-                <div class="mval">247</div>
-                <div class="mdelta" style="color:var(--green)">▲ +12%</div>
-              </div>
-              <div class="ms">
-                <div class="mlbl">Orders</div>
-                <div class="mval" style="color:var(--teal)">38</div>
-                <div class="mdelta" style="color:var(--green)">▲ +8%</div>
-              </div>
-              <div class="ms">
-                <div class="mlbl">CSAT</div>
-                <div class="mval">4.8</div>
-                <div class="mdelta" style="color:var(--text-3)">● Ổn định</div>
-              </div>
-              <div class="ms">
-                <div class="mlbl">Tokens</div>
-                <div class="mval" style="font-size:16px">1.2M</div>
-                <div class="mdelta" style="color:var(--amber)">● $2.40</div>
-              </div>
+              <div class="ms"><div class="mlbl">Sessions</div><div class="mval">247</div><div class="mdelta" style="color:var(--green)">▲ +12%</div></div>
+              <div class="ms"><div class="mlbl">Orders</div><div class="mval" style="color:var(--teal)">38</div><div class="mdelta" style="color:var(--green)">▲ +8%</div></div>
+              <div class="ms"><div class="mlbl">CSAT</div><div class="mval">4.8</div><div class="mdelta" style="color:var(--text-3)">● Ổn định</div></div>
+              <div class="ms"><div class="mlbl">Tokens</div><div class="mval" style="font-size:16px">1.2M</div><div class="mdelta" style="color:var(--amber)">● $2.40</div></div>
             </div>
             <div class="chart-row">
               <div class="chart-panel">
                 <div class="cp-title">Session hôm nay<span class="cp-val">+247</span></div>
-                <canvas id="spark1" width="100%" height="70" style="width:100%"></canvas>
+                <canvas id="spark1" height="70" style="width:100%"></canvas>
               </div>
               <div class="chart-panel">
                 <div class="cp-title" style="margin-bottom:14px">Intent phân bổ</div>
                 <div class="intent-bars">
-                  <div class="ibar"><span class="ibar-lbl">Tư vấn</span><div class="ibar-track"><div class="ibar-fill" style="width:72%;background:var(--blue)"></div></div><span class="ibar-pct">72%</span></div>
+                  <div class="ibar"><span class="ibar-lbl">Tư vấn</span><div class="ibar-track"><div class="ibar-fill" style="width:72%;background:var(--violet)"></div></div><span class="ibar-pct">72%</span></div>
                   <div class="ibar"><span class="ibar-lbl">Đơn hàng</span><div class="ibar-track"><div class="ibar-fill" style="width:18%;background:var(--teal)"></div></div><span class="ibar-pct">18%</span></div>
                   <div class="ibar"><span class="ibar-lbl">Bảo hành</span><div class="ibar-track"><div class="ibar-fill" style="width:7%;background:var(--amber)"></div></div><span class="ibar-pct">7%</span></div>
                   <div class="ibar"><span class="ibar-lbl">Khiếu nại</span><div class="ibar-track"><div class="ibar-fill" style="width:3%;background:var(--red)"></div></div><span class="ibar-pct">3%</span></div>
@@ -853,18 +604,14 @@ footer{padding:60px 0 36px;border-top:1px solid var(--border)}
   </div>
 </section>
 
-<!-- ── OMNICHANNEL ─────────────────────────────────────────────────────────────── -->
-<section class="section" id="omni" style="background:linear-gradient(180deg,transparent 0%,var(--surf) 25%,var(--surf) 75%,transparent 100%)">
+<!-- ── OMNICHANNEL ──────────────────────────────────────────────────────────── -->
+<section class="section" id="omni">
   <div class="wrap">
     <div class="omni-split">
       <div class="omni-visual reveal">
         <div class="omni-ring">
-          <!-- SVG connector lines -->
           <svg class="omni-svg-lines" viewBox="0 0 340 340" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <linearGradient id="lg1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#1E5BFF" stop-opacity=".5"/><stop offset="100%" stop-color="#0ECFB1" stop-opacity=".15"/></linearGradient>
-            </defs>
-            <!-- Lines from center (170,170) to each node -->
+            <defs><linearGradient id="lg1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#A78BFA" stop-opacity=".5"/><stop offset="100%" stop-color="#2DD4BF" stop-opacity=".15"/></linearGradient></defs>
             <line x1="170" y1="170" x2="170" y2="28" stroke="url(#lg1)" stroke-width="1.5" stroke-dasharray="4 4"><animate attributeName="stroke-dashoffset" values="0;-16" dur="1.2s" repeatCount="indefinite"/></line>
             <line x1="170" y1="170" x2="310" y2="112" stroke="url(#lg1)" stroke-width="1.5" stroke-dasharray="4 4"><animate attributeName="stroke-dashoffset" values="0;-16" dur="1.6s" repeatCount="indefinite"/></line>
             <line x1="170" y1="170" x2="310" y2="228" stroke="url(#lg1)" stroke-width="1.5" stroke-dasharray="4 4"><animate attributeName="stroke-dashoffset" values="0;-16" dur="1.4s" repeatCount="indefinite"/></line>
@@ -872,80 +619,46 @@ footer{padding:60px 0 36px;border-top:1px solid var(--border)}
             <line x1="170" y1="170" x2="30" y2="228" stroke="url(#lg1)" stroke-width="1.5" stroke-dasharray="4 4"><animate attributeName="stroke-dashoffset" values="0;-16" dur="1.3s" repeatCount="indefinite"/></line>
             <line x1="170" y1="170" x2="30" y2="112" stroke="url(#lg1)" stroke-width="1.5" stroke-dasharray="4 4"><animate attributeName="stroke-dashoffset" values="0;-16" dur="1.5s" repeatCount="indefinite"/></line>
           </svg>
-
-          <!-- Center hub -->
-          <div class="omni-hub" style="z-index:10">
-            <svg width="30" height="30" viewBox="0 0 24 24" fill="none"><path d="M8 9.5C8 8.12 9.12 7 10.5 7S13 8.12 13 9.5 11.88 12 10.5 12 8 10.88 8 9.5z" fill="white"/><path d="M12.5 15.5c0-1.38 1.12-2.5 2.5-2.5s2.5 1.12 2.5 2.5S16.38 18 15 18s-2.5-1.12-2.5-2.5z" fill="white" opacity=".8"/></svg>
+          <div class="omni-hub">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none">
+              <polygon points="12,3 22,21 2,21" stroke="white" stroke-width="1.5" stroke-linejoin="round" fill="rgba(255,255,255,.15)"/>
+              <line x1="7" y1="15" x2="17" y2="15" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
           </div>
-
-          <!-- Channel nodes placed on circle -->
-          <div class="omni-node" style="top:0;left:50%;transform:translateX(-50%);font-size:20px" title="Zalo OA">
-            <span style="font-weight:800;color:#0068FF;font-family:Arial,sans-serif">Z</span>
-          </div>
-          <div class="omni-node" style="top:22%;right:0;font-size:16px" title="Facebook Messenger">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="#0866FF"><path d="M12 2C6.477 2 2 6.477 2 12c0 4.99 3.657 9.128 8.438 9.878V14.89h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.99 22 12c0-5.523-4.477-10-10-10z"/></svg>
-          </div>
-          <div class="omni-node" style="bottom:22%;right:0" title="Website Widget">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-          </div>
-          <div class="omni-node" style="bottom:0;left:50%;transform:translateX(-50%)" title="Telegram">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="#229ED9"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 0 0-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z"/></svg>
-          </div>
-          <div class="omni-node" style="bottom:22%;left:0" title="WhatsApp">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>
-          </div>
-          <div class="omni-node" style="top:22%;left:0;font-size:16px" title="Shopee Chat">
-            <span style="font-weight:800;color:#FF6A00;font-family:Arial,sans-serif;font-size:12px">SP</span>
-          </div>
+          <div class="omni-node" style="top:0;left:50%;transform:translateX(-50%)" title="Zalo OA"><span style="font-weight:800;color:#0068FF;font-family:Arial,sans-serif;font-size:20px">Z</span></div>
+          <div class="omni-node" style="top:22%;right:0" title="Facebook"><svg width="22" height="22" viewBox="0 0 24 24" fill="#0866FF"><path d="M12 2C6.477 2 2 6.477 2 12c0 4.99 3.657 9.128 8.438 9.878V14.89h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.99 22 12c0-5.523-4.477-10-10-10z"/></svg></div>
+          <div class="omni-node" style="bottom:22%;right:0" title="Website"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--violet)" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></div>
+          <div class="omni-node" style="bottom:0;left:50%;transform:translateX(-50%)" title="Telegram"><svg width="22" height="22" viewBox="0 0 24 24" fill="#229ED9"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 0 0-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z"/></svg></div>
+          <div class="omni-node" style="bottom:22%;left:0" title="WhatsApp"><svg width="22" height="22" viewBox="0 0 24 24" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg></div>
+          <div class="omni-node" style="top:22%;left:0" title="Shopee"><span style="font-weight:800;color:#FF6A00;font-family:Arial,sans-serif;font-size:12px">SP</span></div>
         </div>
       </div>
-
       <div class="omni-feats reveal" style="transition-delay:.15s">
         <span class="label">Quản lý đa kênh</span>
         <h2>Một giao diện,<br>tất cả kênh liên lạc</h2>
         <div class="ofeat">
-          <div class="ofeat-ico">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-          </div>
-          <div>
-            <h4>Unified Inbox</h4>
-            <p>Tất cả tin nhắn từ Zalo, Messenger, Website đổ về một hộp thư — không bỏ sót khách hàng nào.</p>
-          </div>
+          <div class="ofeat-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+          <div><h4>Unified Inbox</h4><p>Tất cả tin nhắn từ Zalo, Messenger, Website đổ về một hộp thư — không bỏ sót khách hàng nào.</p></div>
         </div>
         <div class="ofeat">
-          <div class="ofeat-ico">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-          </div>
-          <div>
-            <h4>Cấu hình độc lập mỗi kênh</h4>
-            <p>Prompt khác nhau, persona khác nhau cho mỗi kênh — Zalo formal, website thân thiện, Messenger trẻ trung.</p>
-          </div>
+          <div class="ofeat-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></div>
+          <div><h4>Cấu hình độc lập mỗi kênh</h4><p>Prompt khác nhau, persona khác nhau cho mỗi kênh — Zalo formal, website thân thiện, Messenger trẻ trung.</p></div>
         </div>
         <div class="ofeat">
-          <div class="ofeat-ico">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-          </div>
-          <div>
-            <h4>Analytics theo từng kênh</h4>
-            <p>So sánh hiệu suất, tỉ lệ chuyển đổi và chi phí AI giữa các kênh — tối ưu ngân sách marketing hiệu quả.</p>
-          </div>
+          <div class="ofeat-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+          <div><h4>Analytics theo từng kênh</h4><p>So sánh hiệu suất, tỉ lệ chuyển đổi và chi phí AI giữa các kênh — tối ưu ngân sách marketing hiệu quả.</p></div>
         </div>
         <div class="ofeat">
-          <div class="ofeat-ico">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-          </div>
-          <div>
-            <h4>Bảo mật & tuân thủ</h4>
-            <p>JWT authentication, rate limiting, input/output guardrails. Dữ liệu lưu trữ tại Việt Nam theo quy định PDPD.</p>
-          </div>
+          <div class="ofeat-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+          <div><h4>Bảo mật & tuân thủ</h4><p>JWT authentication, rate limiting, input/output guardrails. Dữ liệu lưu trữ tại Việt Nam theo quy định PDPD.</p></div>
         </div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ── PRICING ─────────────────────────────────────────────────────────────────── -->
-<section class="section pricing-bg" id="bang-gia">
+<!-- ── PRICING ──────────────────────────────────────────────────────────────── -->
+<section class="section" id="bang-gia">
   <div class="wrap">
     <div class="sec-head reveal">
       <span class="label">Bảng giá</span>
@@ -953,7 +666,6 @@ footer{padding:60px 0 36px;border-top:1px solid var(--border)}
       <p>Trả theo tháng, hủy bất cứ lúc nào. Tất cả gói đều bao gồm onboarding và hỗ trợ triển khai.</p>
     </div>
     <div class="price-grid reveal">
-      <!-- Starter -->
       <div class="price-card">
         <div class="price-tier">Starter</div>
         <div class="price-amt"><span class="cur">₫</span>990<span style="font-size:.45em;color:var(--text-2)">.000</span></div>
@@ -969,8 +681,6 @@ footer{padding:60px 0 36px;border-top:1px solid var(--border)}
         </ul>
         <button class="price-btn">Bắt đầu miễn phí 14 ngày</button>
       </div>
-
-      <!-- Business -->
       <div class="price-card hot">
         <div class="price-badge">Phổ biến nhất</div>
         <div class="price-tier">Business</div>
@@ -989,8 +699,6 @@ footer{padding:60px 0 36px;border-top:1px solid var(--border)}
         </ul>
         <button class="price-btn">Dùng thử 14 ngày miễn phí</button>
       </div>
-
-      <!-- Enterprise -->
       <div class="price-card">
         <div class="price-tier">Enterprise</div>
         <div class="price-amt" style="font-size:28px;padding-top:4px">Liên hệ</div>
@@ -1012,7 +720,7 @@ footer{padding:60px 0 36px;border-top:1px solid var(--border)}
   </div>
 </section>
 
-<!-- ── CTA ────────────────────────────────────────────────────────────────────── -->
+<!-- ── CTA ──────────────────────────────────────────────────────────────────── -->
 <section class="section" id="lien-he">
   <div class="wrap">
     <div class="cta-card reveal">
@@ -1032,238 +740,143 @@ footer{padding:60px 0 36px;border-top:1px solid var(--border)}
   </div>
 </section>
 
-<!-- ── FOOTER ─────────────────────────────────────────────────────────────────── -->
+<!-- ── FOOTER ───────────────────────────────────────────────────────────────── -->
 <footer>
   <div class="wrap">
     <div class="ft-grid">
       <div class="ft-brand">
         <div class="ft-brand-name">
           <div class="logo-mark" style="width:30px;height:30px;border-radius:7px">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M8 9.5C8 8.12 9.12 7 10.5 7S13 8.12 13 9.5 11.88 12 10.5 12 8 10.88 8 9.5z" fill="white"/><path d="M12.5 15.5c0-1.38 1.12-2.5 2.5-2.5s2.5 1.12 2.5 2.5S16.38 18 15 18s-2.5-1.12-2.5-2.5z" fill="white" opacity=".8"/></svg>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><polygon points="12,3 22,21 2,21" stroke="white" stroke-width="1.6" stroke-linejoin="round" fill="rgba(255,255,255,.15)"/><line x1="7" y1="15" x2="17" y2="15" stroke="white" stroke-width="1.6" stroke-linecap="round"/></svg>
           </div>
-          VietBot AI
+          <span class="logo-name">RynexaAI</span>
         </div>
-        <p>Nền tảng AI Chatbot đa kênh hàng đầu Việt Nam. Giúp doanh nghiệp tự động hóa tư vấn, bán hàng và chăm sóc khách hàng 24/7.</p>
-        <div style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--text-3)">
-          <div class="ldot" style="width:6px;height:6px"></div>
-          Servers đặt tại Việt Nam · PDPD Compliant
-        </div>
+        <p>Nền tảng AI Chatbot đa kênh thế hệ mới. Giúp doanh nghiệp tự động hóa tư vấn, bán hàng và chăm sóc khách hàng 24/7.</p>
+        <div style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--text-3)"><div class="ldot" style="width:6px;height:6px"></div>Servers đặt tại Việt Nam · PDPD Compliant</div>
       </div>
-      <div class="ft-col">
-        <h5>Sản phẩm</h5>
-        <ul>
-          <li><a href="#">Tính năng</a></li>
-          <li><a href="#">Lĩnh vực</a></li>
-          <li><a href="#">Bảng giá</a></li>
-          <li><a href="#">Changelog</a></li>
-          <li><a href="#">Roadmap</a></li>
-        </ul>
-      </div>
-      <div class="ft-col">
-        <h5>Tích hợp</h5>
-        <ul>
-          <li><a href="#">Zalo OA</a></li>
-          <li><a href="#">Facebook Messenger</a></li>
-          <li><a href="#">Website Widget</a></li>
-          <li><a href="#">Telegram Bot</a></li>
-          <li><a href="#">API & Webhook</a></li>
-        </ul>
-      </div>
-      <div class="ft-col">
-        <h5>Hỗ trợ</h5>
-        <ul>
-          <li><a href="#">Tài liệu</a></li>
-          <li><a href="#">API Reference</a></li>
-          <li><a href="#">Cộng đồng</a></li>
-          <li><a href="#">Liên hệ</a></li>
-          <li><a href="#">Chính sách bảo mật</a></li>
-        </ul>
-      </div>
+      <div class="ft-col"><h5>Sản phẩm</h5><ul><li><a href="#">Tính năng</a></li><li><a href="#">Lĩnh vực</a></li><li><a href="#">Bảng giá</a></li><li><a href="#">Changelog</a></li><li><a href="#">Roadmap</a></li></ul></div>
+      <div class="ft-col"><h5>Tích hợp</h5><ul><li><a href="#">Zalo OA</a></li><li><a href="#">Facebook Messenger</a></li><li><a href="#">Website Widget</a></li><li><a href="#">Telegram Bot</a></li><li><a href="#">API & Webhook</a></li></ul></div>
+      <div class="ft-col"><h5>Hỗ trợ</h5><ul><li><a href="#">Tài liệu</a></li><li><a href="#">API Reference</a></li><li><a href="#">Cộng đồng</a></li><li><a href="#">Liên hệ</a></li><li><a href="#">Chính sách bảo mật</a></li></ul></div>
     </div>
     <div class="ft-bottom">
-      <span>© 2026 VietBot AI. Bảo lưu mọi quyền.</span>
+      <span>© 2026 RynexaAI. Bảo lưu mọi quyền.</span>
       <div class="ft-socials">
-        <a href="#" class="ft-social" aria-label="Facebook">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
-        </a>
-        <a href="#" class="ft-social" aria-label="Zalo">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="font-weight:800"><text x="2" y="18" font-size="16" font-weight="800" font-family="Arial">Z</text></svg>
-        </a>
-        <a href="#" class="ft-social" aria-label="YouTube">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-2.75 12.57 12.57 0 00-8.5 1.27 12.73 12.73 0 00-5.31 10.42 12.55 12.55 0 006.44 10.88 12.3 12.3 0 0010.55-.17 12.72 12.72 0 005.39-10.31v-.13a4.81 4.81 0 01-4.8-9.21zM12 16.5l-4.5-2.6v-5.2l4.5 2.6 4.5-2.6v5.2z"/></svg>
-        </a>
+        <a href="#" class="ft-social" aria-label="Facebook"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg></a>
+        <a href="#" class="ft-social" aria-label="LinkedIn"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg></a>
+        <a href="#" class="ft-social" aria-label="GitHub"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0 1 12 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/></svg></a>
       </div>
     </div>
   </div>
 </footer>
 
 <script>
-/* ── THEME ────────────────────────────────────────────────────────────────── */
+/* ── THEME ──────────────────────────────────────────────────────────────── */
 const html = document.documentElement;
-const stored = localStorage.getItem('vb-theme');
+const stored = localStorage.getItem('rx-theme');
 if (stored) html.setAttribute('data-theme', stored);
-
-function syncThemeIcons() {
+function syncIcons() {
   const dark = html.getAttribute('data-theme') !== 'light';
   document.getElementById('ico-sun').style.display = dark ? 'none' : '';
   document.getElementById('ico-moon').style.display = dark ? '' : 'none';
 }
-syncThemeIcons();
-
+syncIcons();
 document.getElementById('theme-btn').addEventListener('click', () => {
   const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
   html.setAttribute('data-theme', next);
-  localStorage.setItem('vb-theme', next);
-  syncThemeIcons();
+  localStorage.setItem('rx-theme', next);
+  syncIcons();
 });
 
-/* ── SCROLL REVEAL ────────────────────────────────────────────────────────── */
-const revealObs = new IntersectionObserver(entries => {
-  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); revealObs.unobserve(e.target); } });
+/* ── SCROLL REVEAL ──────────────────────────────────────────────────────── */
+const revObs = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); revObs.unobserve(e.target); } });
 }, { threshold: .12 });
-document.querySelectorAll('.reveal').forEach(el => revealObs.observe(el));
+document.querySelectorAll('.reveal').forEach(el => revObs.observe(el));
 
-/* ── COUNTER ANIMATION ────────────────────────────────────────────────────── */
+/* ── COUNTER ────────────────────────────────────────────────────────────── */
 const numObs = new IntersectionObserver(entries => {
   entries.forEach(e => {
     if (!e.isIntersecting) return;
-    const el = e.target;
-    const target = parseFloat(el.dataset.target);
-    const dec = String(target).includes('.') ? (String(target).split('.')[1]?.length || 1) : 0;
-    let start = 0, t0 = null;
-    const dur = 1800;
-    function step(ts) {
+    const el = e.target, target = parseFloat(el.dataset.target);
+    const dec = String(target).includes('.') ? String(target).split('.')[1].length : 0;
+    let t0 = null;
+    (function step(ts) {
       if (!t0) t0 = ts;
-      const p = Math.min((ts - t0) / dur, 1);
-      const ease = 1 - Math.pow(1 - p, 3);
-      el.textContent = (start + (target - start) * ease).toFixed(dec);
+      const p = Math.min((ts - t0) / 1800, 1);
+      el.textContent = (target * (1 - Math.pow(1 - p, 3))).toFixed(dec);
       if (p < 1) requestAnimationFrame(step);
-    }
-    requestAnimationFrame(step);
+    })(performance.now());
     numObs.unobserve(el);
   });
 }, { threshold: .5 });
 document.querySelectorAll('.num').forEach(el => numObs.observe(el));
 
-/* ── CHAT ANIMATION ───────────────────────────────────────────────────────── */
+/* ── CHAT ANIMATION ─────────────────────────────────────────────────────── */
 const chatBody = document.getElementById('chat-body');
 const typingEl = document.getElementById('typing');
-
 const MSGS = [
-  { role: 'user',  text: 'Cho tôi tư vấn laptop gaming khoảng 25–30 triệu', delay: 800 },
-  { role: 'bot',   text: '💻 Tôi có 3 lựa chọn phù hợp ngân sách của bạn:', delay: 2200, typeDur: 1200 },
-  { role: 'card',  delay: 2400 },
-  { role: 'user',  text: 'ASUS ROG có bảo hành không?', delay: 5500 },
-  { role: 'bot',   text: 'ASUS ROG Strix G16 được bảo hành <strong>24 tháng chính hãng</strong> tại 120+ trung tâm toàn quốc. Bạn muốn đặt hàng không? 🛒', delay: 7200, typeDur: 1400 },
-  { role: 'user',  text: 'Đặt luôn, giao về Hà Nội', delay: 9500 },
-  { role: 'bot',   text: '🎉 <strong>Đặt hàng thành công!</strong> Mã đơn #ORD2847. Dự kiến giao trong 2–3 ngày. Bạn sẽ nhận SMS thông báo theo từng bước.', delay: 11200, typeDur: 1600 },
+  { role:'user', text:'Cho tôi tư vấn laptop gaming khoảng 25–30 triệu', delay:800 },
+  { role:'bot',  text:'💻 Tôi có 3 lựa chọn phù hợp ngân sách của bạn:', delay:2200, typeDur:1200 },
+  { role:'card', delay:2400 },
+  { role:'user', text:'ASUS ROG có bảo hành không?', delay:5500 },
+  { role:'bot',  text:'ASUS ROG Strix G16 được bảo hành <strong>24 tháng chính hãng</strong> tại 120+ trung tâm toàn quốc. Bạn muốn đặt hàng không? 🛒', delay:7200, typeDur:1400 },
+  { role:'user', text:'Đặt luôn, giao về Hà Nội', delay:9500 },
+  { role:'bot',  text:'🎉 <strong>Đặt hàng thành công!</strong> Mã đơn #ORD2847. Dự kiến giao 2–3 ngày. Bạn sẽ nhận SMS theo từng bước.', delay:11200, typeDur:1600 },
 ];
-
-function addMsg(msg) {
+function addMsg(m) {
   const el = document.createElement('div');
-  el.className = 'msg ' + (msg.role === 'user' ? 'user' : 'bot');
-
-  if (msg.role === 'card') {
-    el.classList.add('bot');
-    el.style.padding = '0';
-    el.style.background = 'transparent';
-    el.innerHTML = `<div class="pcard">
-      <div class="pcard-name">ASUS ROG Strix G16 2024</div>
-      <div class="pcard-price">27.990.000đ</div>
-      <div class="pcard-spec">RTX 4070 · i9-14900HX · 32GB · 1TB</div>
-      <div class="pcard-badge">Đề xuất #1</div>
-    </div>`;
-  } else {
-    el.innerHTML = msg.text;
-  }
-
+  el.className = 'msg ' + (m.role === 'user' ? 'user' : 'bot');
+  if (m.role === 'card') {
+    el.style.cssText = 'padding:0;background:transparent';
+    el.innerHTML = `<div class="pcard"><div class="pcard-name">ASUS ROG Strix G16 2024</div><div class="pcard-price">27.990.000đ</div><div class="pcard-spec">RTX 4070 · i9-14900HX · 32GB · 1TB</div><div class="pcard-badge">Đề xuất #1</div></div>`;
+  } else { el.innerHTML = m.text; }
   chatBody.insertBefore(el, typingEl);
-  requestAnimationFrame(() => { requestAnimationFrame(() => el.classList.add('show')); });
+  requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('show')));
   chatBody.scrollTop = chatBody.scrollHeight;
 }
-
 function runChat(i) {
-  if (i >= MSGS.length) {
-    setTimeout(() => {
-      chatBody.querySelectorAll('.msg').forEach(e => e.remove());
-      setTimeout(() => runChat(0), 600);
-    }, 4000);
-    return;
-  }
+  if (i >= MSGS.length) { setTimeout(() => { chatBody.querySelectorAll('.msg').forEach(e => e.remove()); setTimeout(() => runChat(0), 600); }, 4000); return; }
   const m = MSGS[i];
   setTimeout(() => {
-    if (m.role === 'bot' || m.role === 'card') {
-      if (m.role === 'bot') {
-        typingEl.classList.add('on');
-        chatBody.scrollTop = chatBody.scrollHeight;
-      }
-      setTimeout(() => {
-        typingEl.classList.remove('on');
-        addMsg(m);
-        runChat(i + 1);
-      }, m.typeDur || 0);
-    } else {
-      addMsg(m);
-      runChat(i + 1);
-    }
+    if (m.role !== 'user') {
+      if (m.role === 'bot') { typingEl.classList.add('on'); chatBody.scrollTop = chatBody.scrollHeight; }
+      setTimeout(() => { typingEl.classList.remove('on'); addMsg(m); runChat(i + 1); }, m.typeDur || 0);
+    } else { addMsg(m); runChat(i + 1); }
   }, m.delay);
 }
-
-// Start chat after short delay
 setTimeout(() => runChat(0), 1200);
 
-/* ── SPARKLINE ────────────────────────────────────────────────────────────── */
+/* ── SPARKLINE ──────────────────────────────────────────────────────────── */
 function sparkline(id, data, color) {
   const canvas = document.getElementById(id);
   if (!canvas) return;
-  const dpr = window.devicePixelRatio || 1;
-  const W = canvas.offsetWidth || 240, H = 70;
+  const dpr = window.devicePixelRatio || 1, W = canvas.offsetWidth || 240, H = 70;
   canvas.width = W * dpr; canvas.height = H * dpr;
   canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
   const ctx = canvas.getContext('2d');
   ctx.scale(dpr, dpr);
-
   const min = Math.min(...data), max = Math.max(...data), range = max - min || 1;
-  const pad = 4;
-  const px = i => pad + (i / (data.length - 1)) * (W - 2 * pad);
+  const pad = 4, px = i => pad + (i / (data.length - 1)) * (W - 2 * pad);
   const py = v => H - pad - ((v - min) / range) * (H - 2 * pad) * .88;
-
-  // Fill
   const grad = ctx.createLinearGradient(0, 0, 0, H);
   grad.addColorStop(0, color + '30'); grad.addColorStop(1, color + '00');
   ctx.beginPath();
   data.forEach((v, i) => i === 0 ? ctx.moveTo(px(i), py(v)) : ctx.lineTo(px(i), py(v)));
   ctx.lineTo(px(data.length - 1), H); ctx.lineTo(px(0), H);
   ctx.closePath(); ctx.fillStyle = grad; ctx.fill();
-
-  // Line
   ctx.beginPath();
   data.forEach((v, i) => i === 0 ? ctx.moveTo(px(i), py(v)) : ctx.lineTo(px(i), py(v)));
   ctx.strokeStyle = color; ctx.lineWidth = 1.8; ctx.lineJoin = 'round'; ctx.stroke();
-
-  // Endpoint dot
   const lx = px(data.length - 1), ly = py(data[data.length - 1]);
-  ctx.beginPath(); ctx.arc(lx, ly, 3.5, 0, Math.PI * 2);
-  ctx.fillStyle = color; ctx.fill();
-  ctx.beginPath(); ctx.arc(lx, ly, 3.5, 0, Math.PI * 2);
-  ctx.fillStyle = '#fff'; ctx.globalAlpha = .5; ctx.fill(); ctx.globalAlpha = 1;
+  ctx.beginPath(); ctx.arc(lx, ly, 3.5, 0, Math.PI * 2); ctx.fillStyle = color; ctx.fill();
 }
-
 const sessData = [18,24,19,32,28,35,42,38,47,52,48,55,60,58,68,72,65,78,85,80,90,95,88,102,98,112,108,120,115,130,125,140,138,150,145,162,158,172,168,180,175,190,185,200,195,210,205,220,215,247];
-
 const dashObs = new IntersectionObserver(entries => {
-  entries.forEach(e => {
-    if (e.isIntersecting) {
-      sparkline('spark1', sessData, '#1E5BFF');
-      dashObs.unobserve(e.target);
-    }
-  });
+  entries.forEach(e => { if (e.isIntersecting) { sparkline('spark1', sessData, '#A78BFA'); dashObs.unobserve(e.target); } });
 }, { threshold: .3 });
 const dashEl = document.getElementById('spark1');
 if (dashEl) dashObs.observe(dashEl.closest('.dash-frame') || dashEl);
-
-// Also draw after load in case already visible
-window.addEventListener('load', () => sparkline('spark1', sessData, '#1E5BFF'));
+window.addEventListener('load', () => sparkline('spark1', sessData, '#A78BFA'));
 </script>
 </body>
 </html>
