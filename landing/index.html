@@ -137,8 +137,8 @@ p{color:var(--text-2);line-height:1.75}
 .reveal.in{opacity:1;transform:none}
 
 /* ── NAV ─────────────────────────────────────────────────────────────────── */
-.nav{position:sticky;top:0;z-index:200;padding:0 28px;background:rgba(8,10,18,.65);backdrop-filter:blur(32px) saturate(200%);-webkit-backdrop-filter:blur(32px) saturate(200%);border-bottom:1px solid var(--gb)}
-[data-theme="light"] .nav{background:rgba(250,248,240,.80)}
+.nav{position:sticky;top:0;z-index:200;padding:0 28px;background:rgba(13,12,12,.70);backdrop-filter:blur(32px) saturate(200%);-webkit-backdrop-filter:blur(32px) saturate(200%);border-bottom:1px solid var(--gb)}
+[data-theme="light"] .nav{background:rgba(250,245,245,.82)}
 .nav-inner{max-width:1200px;margin:0 auto;height:66px;display:flex;align-items:center}
 .logo{display:flex;align-items:center;gap:11px;font-weight:800;font-size:18.5px;letter-spacing:-.03em;margin-right:auto}
 .logo-mark{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#CD6B6B 0%,#B04444 100%);display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 0 16px rgba(205,107,107,.45)}
@@ -150,7 +150,25 @@ p{color:var(--text-2);line-height:1.75}
 .nav-acts{display:flex;align-items:center;gap:10px;margin-left:28px}
 .theme-btn{width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:9px;border:1px solid var(--gb);color:var(--text-2);background:var(--g1);backdrop-filter:var(--blur-sm);-webkit-backdrop-filter:var(--blur-sm);transition:all .2s}
 .theme-btn:hover{color:var(--text);border-color:var(--gb-hi);background:var(--g2)}
-@media(max-width:768px){.nav-links,.nav-acts .btn-glass{display:none}}
+/* ── MOBILE MENU ─────────────────────────────────────────────────────────── */
+.menu-btn{display:none;width:38px;height:38px;border-radius:9px;border:1px solid var(--gb);background:var(--g1);backdrop-filter:var(--blur-sm);-webkit-backdrop-filter:var(--blur-sm);align-items:center;justify-content:center;flex-direction:column;gap:5px;cursor:pointer;margin-left:12px;flex-shrink:0;transition:border-color .2s,background .2s}
+.menu-btn:hover{background:var(--g2);border-color:var(--gb-hi)}
+.menu-btn span{display:block;width:16px;height:1.5px;background:var(--text-2);border-radius:2px;transition:transform .28s var(--ease),opacity .2s,width .28s}
+.menu-btn.open span:nth-child(1){transform:translateY(6.5px) rotate(45deg)}
+.menu-btn.open span:nth-child(2){opacity:0;width:0}
+.menu-btn.open span:nth-child(3){transform:translateY(-6.5px) rotate(-45deg)}
+.mobile-menu{position:fixed;top:66px;left:0;right:0;z-index:190;background:rgba(13,12,12,.94);backdrop-filter:blur(36px) saturate(200%);-webkit-backdrop-filter:blur(36px) saturate(200%);border-bottom:1px solid var(--gb);padding:16px 28px 28px;transform:translateY(-10px);opacity:0;pointer-events:none;transition:transform .3s var(--ease),opacity .28s var(--ease)}
+[data-theme="light"] .mobile-menu{background:rgba(250,245,245,.95)}
+.mobile-menu.open{transform:translateY(0);opacity:1;pointer-events:all}
+.mm-links{list-style:none;display:flex;flex-direction:column;margin-bottom:20px}
+.mm-links li a{display:flex;align-items:center;padding:13px 0;font-size:15px;font-weight:500;color:var(--text-2);border-bottom:1px solid var(--gb-s);transition:color .2s,padding-left .2s}
+.mm-links li:last-child a{border-bottom:none}
+.mm-links li a:hover{color:var(--text);padding-left:6px}
+.mm-cta{display:flex;flex-direction:column;gap:10px;padding-top:4px}
+@media(max-width:768px){
+  .nav-links,.nav-acts .btn-glass,.nav-acts .btn-primary{display:none}
+  .menu-btn{display:flex}
+}
 
 /* ── HERO ────────────────────────────────────────────────────────────────── */
 .hero{padding:80px 0 100px;overflow:visible}
@@ -408,8 +426,27 @@ footer{padding:64px 0 40px;border-top:1px solid var(--gb)}
       <a href="#bang-gia" class="btn btn-glass" style="padding:9px 18px;font-size:13.5px">Xem giá</a>
       <a href="#lien-he" class="btn btn-primary" style="padding:9px 18px;font-size:13.5px">Dùng thử miễn phí</a>
     </div>
+    <button class="menu-btn" id="menu-btn" aria-label="Mở menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
   </div>
 </nav>
+
+<!-- ── MOBILE MENU ────────────────────────────────────────────────────────── -->
+<div class="mobile-menu" id="mobile-menu" aria-hidden="true">
+  <ul class="mm-links">
+    <li><a href="#tinh-nang">Tính năng</a></li>
+    <li><a href="#demo">Demo thực tế</a></li>
+    <li><a href="#linh-vuc">Lĩnh vực</a></li>
+    <li><a href="#dashboard">Dashboard</a></li>
+    <li><a href="#omni">Đa kênh</a></li>
+    <li><a href="#bang-gia">Bảng giá</a></li>
+  </ul>
+  <div class="mm-cta">
+    <a href="#lien-he" class="btn btn-primary" style="justify-content:center;font-size:14.5px">Dùng thử miễn phí 14 ngày</a>
+    <a href="#bang-gia" class="btn btn-glass" style="justify-content:center;font-size:14px">Xem bảng giá</a>
+  </div>
+</div>
 
 <!-- ── HERO ────────────────────────────────────────────────────────────────── -->
 <section class="hero">
@@ -852,6 +889,21 @@ footer{padding:64px 0 40px;border-top:1px solid var(--gb)}
 </footer>
 
 <script>
+/* ── MOBILE MENU ────────────────────────────────────────────────────────── */
+const menuBtn = document.getElementById('menu-btn');
+const mobileMenu = document.getElementById('mobile-menu');
+function toggleMenu(force) {
+  const open = typeof force === 'boolean' ? force : !menuBtn.classList.contains('open');
+  menuBtn.classList.toggle('open', open);
+  mobileMenu.classList.toggle('open', open);
+  menuBtn.setAttribute('aria-expanded', open);
+  mobileMenu.setAttribute('aria-hidden', !open);
+  document.body.style.overflow = open ? 'hidden' : '';
+}
+menuBtn.addEventListener('click', () => toggleMenu());
+mobileMenu.querySelectorAll('a').forEach(a => a.addEventListener('click', () => toggleMenu(false)));
+document.addEventListener('keydown', e => { if (e.key === 'Escape') toggleMenu(false); });
+
 /* ── THEME ──────────────────────────────────────────────────────────────── */
 const html = document.documentElement;
 const stored = localStorage.getItem('rx-theme');
