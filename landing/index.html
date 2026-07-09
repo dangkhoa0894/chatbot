@@ -269,11 +269,13 @@ p{color:var(--text-2);line-height:1.75}
 .chat-meta{flex:1}
 .chat-name{font-size:13.5px;font-weight:700;color:var(--text)}
 .chat-status{font-size:10.5px;color:var(--teal);display:flex;align-items:center;gap:5px;margin-top:2px}
-.demo-screens{overflow:hidden}
-.demo-screen{display:none;flex-direction:column;gap:10px;padding:16px;max-height:420px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--gb) transparent}
-.demo-screen.active{display:flex}
+.demo-screens{overflow:hidden;position:relative;height:430px}
+.demo-screen{position:absolute;inset:0;display:flex;flex-direction:column;gap:10px;padding:16px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--gb) transparent;transform:translateX(110%);opacity:0;pointer-events:none;will-change:transform,opacity;transition:transform .55s cubic-bezier(.4,0,.2,1),opacity .38s ease}
+.demo-screen.active{transform:translateX(0);opacity:1;pointer-events:all}
 .demo-screen::-webkit-scrollbar{width:3px}
 .demo-screen::-webkit-scrollbar-thumb{background:var(--gb);border-radius:99px}
+.demo-progress-bar{height:2px;background:var(--gb);border-radius:99px;margin-bottom:32px;overflow:hidden}
+.demo-progress-fill{height:100%;background:linear-gradient(90deg,var(--violet),var(--violet-2));border-radius:99px;width:0%;will-change:width}
 .msg{display:flex;flex-direction:column;max-width:82%}
 .msg.bot{align-self:flex-start}
 .msg.user{align-self:flex-end;align-items:flex-end}
@@ -288,7 +290,8 @@ p{color:var(--text-2);line-height:1.75}
 .mc-sub{font-size:11px;color:var(--text-3);line-height:1.5}
 .mc-tag{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:600;color:var(--teal);background:var(--tdim);border-radius:4px;padding:2px 7px;margin-top:6px}
 .demo-feat{display:none}
-.demo-feat.active{display:block}
+.demo-feat.active{display:block;animation:dfIn .42s cubic-bezier(.4,0,.2,1)}
+@keyframes dfIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 .demo-feat h3{font-size:clamp(21px,2.4vw,30px);font-weight:700;letter-spacing:-.03em;margin-bottom:12px;line-height:1.18;color:var(--text)}
 .demo-feat > p{margin-bottom:24px;font-size:15px}
 .chat-input-row{border-top:1px solid var(--gb);padding:12px 16px;display:flex;align-items:center;gap:8px}
@@ -632,6 +635,9 @@ footer{padding:64px 0 40px;border-top:1px solid var(--gb)}
         Trung tâm Anh ngữ
       </button>
     </div>
+
+    <!-- Progress bar -->
+    <div class="demo-progress-bar"><div class="demo-progress-fill" id="demo-progress-fill"></div></div>
 
     <!-- Main layout -->
     <div class="demo-main">
@@ -1176,20 +1182,135 @@ menuBtn.addEventListener('click', () => toggleMenu());
 mobileMenu.querySelectorAll('a').forEach(a => a.addEventListener('click', () => toggleMenu(false)));
 document.addEventListener('keydown', e => { if (e.key === 'Escape') toggleMenu(false); });
 
-/* ── DEMO TABS ──────────────────────────────────────────────────────────── */
-document.querySelectorAll('.demo-tab').forEach(tab => {
-  tab.addEventListener('click', () => {
-    const key = tab.dataset.demo;
-    document.querySelectorAll('.demo-tab').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.demo-screen').forEach(s => s.classList.remove('active'));
-    document.querySelectorAll('.demo-feat').forEach(f => f.classList.remove('active'));
-    tab.classList.add('active');
-    document.querySelector(`.demo-screen[data-demo="${key}"]`).classList.add('active');
-    document.querySelector(`.demo-feat[data-demo="${key}"]`).classList.add('active');
-    const nameEl = document.getElementById('demo-name');
-    if (nameEl) nameEl.textContent = tab.dataset.name || '';
+/* ── DEMO TABS (auto-rotate + slide + auto-scroll) ──────────────────────── */
+(function() {
+  const DURATION = 20000;       // ms per slide
+  const SCROLL_RATIO = 0.82;    // fraction of DURATION spent scrolling to bottom
+
+  const tabs    = [...document.querySelectorAll('.demo-tab')];
+  const screens = [...document.querySelectorAll('.demo-screen')];
+  const feats   = [...document.querySelectorAll('.demo-feat')];
+  const fill    = document.getElementById('demo-progress-fill');
+  const nameEl  = document.getElementById('demo-name');
+  const section = document.getElementById('demo');
+
+  let current = 0;
+  let rafId   = null;
+  let paused  = false;
+
+  /* Accumulated ms of non-paused time for the current slide */
+  let accumulated = 0;
+  /* RAF timestamp when the current run started (null = not running) */
+  let runStart = null;
+
+  function getElapsed(ts) {
+    if (paused || runStart === null) return accumulated;
+    return accumulated + (ts - runStart);
+  }
+
+  function pauseNow() {
+    accumulated = getElapsed(performance.now());
+    runStart = null;
+    paused = true;
+  }
+
+  function resumeNow() {
+    paused = false;
+    runStart = performance.now();
+  }
+
+  function resetTimer() {
+    accumulated = 0;
+    runStart = null;
+  }
+
+  /* Slide to a new index, dir: +1 = forward, -1 = backward */
+  function go(idx, dir) {
+    if (idx === current) return;
+    const prev = current;
+    current = idx;
+
+    /* Tabs + feat */
+    tabs.forEach((t, i) => t.classList.toggle('active', i === idx));
+    feats.forEach((f, i) => {
+      f.classList.remove('active');
+      if (i === idx) { f.style.animation = 'none'; f.offsetHeight; f.style.animation = ''; f.classList.add('active'); }
+    });
+    if (nameEl) nameEl.textContent = tabs[idx].dataset.name || '';
+
+    /* Screens — snap new off-screen, then animate both */
+    const outScreen = screens[prev];
+    const inScreen  = screens[idx];
+
+    inScreen.style.transition = 'none';
+    inScreen.style.transform  = dir >= 0 ? 'translateX(110%)' : 'translateX(-110%)';
+    inScreen.style.opacity    = '0';
+    inScreen.classList.add('active');
+    inScreen.scrollTop = 0;
+    inScreen.offsetHeight; /* reflow */
+
+    inScreen.style.transition    = '';
+    inScreen.style.transform     = 'translateX(0)';
+    inScreen.style.opacity       = '1';
+    inScreen.style.pointerEvents = 'all';
+
+    outScreen.style.transform    = dir >= 0 ? 'translateX(-110%)' : 'translateX(110%)';
+    outScreen.style.opacity      = '0';
+    outScreen.style.pointerEvents = 'none';
+    setTimeout(() => {
+      outScreen.classList.remove('active');
+      outScreen.style.cssText = '';
+      outScreen.scrollTop = 0;
+    }, 580);
+  }
+
+  /* RAF loop */
+  function tick(ts) {
+    if (!paused && runStart === null) runStart = ts;
+
+    const elapsed   = getElapsed(ts);
+    const progress  = Math.min(elapsed / DURATION, 1);
+
+    if (fill) fill.style.width = (progress * 100) + '%';
+
+    /* Auto-scroll */
+    const scr = screens[current];
+    if (!paused) {
+      const scrollable = scr.scrollHeight - scr.clientHeight;
+      if (scrollable > 0) {
+        const sp = Math.min(elapsed / (DURATION * SCROLL_RATIO), 1);
+        const e  = sp < 0.5 ? 4*sp*sp*sp : 1 - Math.pow(-2*sp+2, 3)/2;
+        scr.scrollTop = e * scrollable;
+      }
+    }
+
+    /* Auto-advance */
+    if (!paused && elapsed >= DURATION) {
+      go((current + 1) % tabs.length, 1);
+      resetTimer();
+      runStart = ts;
+    }
+
+    rafId = requestAnimationFrame(tick);
+  }
+
+  /* Tab clicks */
+  tabs.forEach((tab, i) => {
+    tab.addEventListener('click', () => {
+      go(i, i >= current ? 1 : -1);
+      resetTimer();
+      if (!paused) runStart = performance.now();
+      if (fill) fill.style.width = '0%';
+    });
   });
-});
+
+  /* Pause on hover */
+  section.addEventListener('mouseenter', pauseNow);
+  section.addEventListener('mouseleave', resumeNow);
+
+  /* Go */
+  requestAnimationFrame(tick);
+})();
 
 /* ── THEME ──────────────────────────────────────────────────────────────── */
 const html = document.documentElement;
