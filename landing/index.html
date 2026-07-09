@@ -255,32 +255,47 @@ p{color:var(--text-2);line-height:1.75}
 @media(max-width:640px){.ind-grid{grid-template-columns:repeat(2,1fr)}}
 
 /* ── DEMO CHAT ───────────────────────────────────────────────────────────── */
-.demo-split{display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:center}
-.chat-phone{max-width:320px;margin:0 auto}
+.demo-tabs{display:flex;gap:8px;margin-bottom:36px;flex-wrap:wrap}
+.demo-tab{display:inline-flex;align-items:center;gap:7px;padding:8px 16px;border-radius:99px;border:1px solid var(--gb);background:var(--g1);color:var(--text-2);font-size:13px;font-weight:600;font-family:var(--font);cursor:pointer;transition:all .22s var(--ease);backdrop-filter:var(--blur-sm);-webkit-backdrop-filter:var(--blur-sm)}
+.demo-tab:hover{border-color:var(--gb-hi);color:var(--text);background:var(--g2)}
+.demo-tab.active{background:var(--vdim);border-color:rgba(216,141,141,.32);color:var(--violet)}
+.demo-main{display:grid;grid-template-columns:320px 1fr;gap:52px;align-items:start}
+.demo-phone-wrap{position:sticky;top:88px}
+.chat-phone{width:100%}
 .chat-frame{background:var(--g1);backdrop-filter:var(--blur-lg);-webkit-backdrop-filter:var(--blur-lg);border:1px solid var(--gb);border-radius:28px;overflow:hidden;box-shadow:0 40px 100px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.08)}
-[data-theme="light"] .chat-frame{box-shadow:0 24px 80px rgba(80,60,200,.12)}
+[data-theme="light"] .chat-frame{box-shadow:0 24px 80px rgba(180,80,80,.12)}
 .chat-top{background:var(--g2);border-bottom:1px solid var(--gb);padding:14px 18px;display:flex;align-items:center;gap:11px}
 .chat-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#CD6B6B,#B04444);display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 0 12px rgba(205,107,107,.35)}
 .chat-meta{flex:1}
 .chat-name{font-size:13.5px;font-weight:700;color:var(--text)}
 .chat-status{font-size:10.5px;color:var(--teal);display:flex;align-items:center;gap:5px;margin-top:2px}
-.chat-body{padding:16px;display:flex;flex-direction:column;gap:10px}
+.demo-screens{overflow:hidden}
+.demo-screen{display:none;flex-direction:column;gap:10px;padding:16px;max-height:420px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--gb) transparent}
+.demo-screen.active{display:flex}
+.demo-screen::-webkit-scrollbar{width:3px}
+.demo-screen::-webkit-scrollbar-thumb{background:var(--gb);border-radius:99px}
 .msg{display:flex;flex-direction:column;max-width:82%}
 .msg.bot{align-self:flex-start}
 .msg.user{align-self:flex-end;align-items:flex-end}
 .msg-bubble{padding:10px 14px;border-radius:16px;font-size:13px;line-height:1.55}
 .msg.bot .msg-bubble{background:var(--g2);border:1px solid var(--gb);border-bottom-left-radius:5px;color:var(--text)}
-.msg.user .msg-bubble{background:linear-gradient(135deg,#D97706,#B45309);color:#fff;border-bottom-right-radius:5px}
+.msg.user .msg-bubble{background:linear-gradient(135deg,#CD6B6B,#B04444);color:#fff;border-bottom-right-radius:5px}
 .msg-time{font-size:10px;color:var(--text-3);margin-top:3px;padding:0 4px}
-.msg-product{background:var(--g2);border:1px solid var(--gb);border-radius:14px;padding:12px;display:flex;gap:10px;align-items:center;margin-top:4px;max-width:100%}
-.mp-img{width:44px;height:44px;border-radius:9px;background:var(--g3);border:1px solid var(--gb);display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.mp-name{font-size:12.5px;font-weight:600;color:var(--text);line-height:1.3}
-.mp-price{font-family:var(--mono);font-size:13px;color:var(--amber);font-weight:700;margin-top:3px}
-.mp-sub{font-size:10.5px;color:var(--teal);margin-top:3px}
+.msg-card{background:var(--g2);border:1px solid var(--gb);border-radius:12px;padding:11px 13px;margin-top:3px;max-width:100%}
+.mc-row{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:4px}
+.mc-name{font-size:12.5px;font-weight:700;color:var(--text);line-height:1.35;flex:1}
+.mc-price{font-family:var(--mono);font-size:12.5px;color:var(--violet);font-weight:700;white-space:nowrap;flex-shrink:0}
+.mc-sub{font-size:11px;color:var(--text-3);line-height:1.5}
+.mc-tag{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:600;color:var(--teal);background:var(--tdim);border-radius:4px;padding:2px 7px;margin-top:6px}
+.demo-feat{display:none}
+.demo-feat.active{display:block}
+.demo-feat h3{font-size:clamp(21px,2.4vw,30px);font-weight:700;letter-spacing:-.03em;margin-bottom:12px;line-height:1.18;color:var(--text)}
+.demo-feat > p{margin-bottom:24px;font-size:15px}
 .chat-input-row{border-top:1px solid var(--gb);padding:12px 16px;display:flex;align-items:center;gap:8px}
 .ci-field{flex:1;background:var(--g2);border:1px solid var(--gb);border-radius:20px;padding:9px 14px;font-size:12.5px;color:var(--text-3);font-family:var(--font)}
 .ci-send{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#CD6B6B,#B04444);display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 0 12px rgba(205,107,107,.3)}
-@media(max-width:860px){.demo-split{grid-template-columns:1fr}.chat-phone{max-width:360px}}
+@media(max-width:920px){.demo-main{grid-template-columns:1fr}.demo-phone-wrap{position:static;max-width:400px;margin:0 auto}}
+@media(max-width:560px){.demo-tabs{gap:6px;overflow-x:auto;flex-wrap:nowrap;padding-bottom:4px;-ms-overflow-style:none;scrollbar-width:none}.demo-tabs::-webkit-scrollbar{display:none}.demo-tab{font-size:11.5px;padding:6px 12px;white-space:nowrap}}
 
 /* ── DASHBOARD ───────────────────────────────────────────────────────────── */
 .dash-split{display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:center}
@@ -589,8 +604,39 @@ footer{padding:64px 0 40px;border-top:1px solid var(--gb)}
 <!-- ── DEMO CHAT ─────────────────────────────────────────────────────────────── -->
 <section class="section" id="demo">
   <div class="wrap">
-    <div class="demo-split">
-      <div class="reveal">
+    <div class="sec-head reveal">
+      <h2>Demo thực tế theo<br>từng lĩnh vực</h2>
+      <p>Xem cách AI chatbot hoạt động trong các ngành khác nhau — từ tư vấn sản phẩm đến đặt phòng, gọi món và tuyển sinh.</p>
+    </div>
+
+    <!-- Tabs -->
+    <div class="demo-tabs reveal">
+      <button class="demo-tab active" data-demo="tech" data-name="TechZone Assistant">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18" stroke-linecap="round" stroke-width="2.5"/></svg>
+        Cửa hàng Tech
+      </button>
+      <button class="demo-tab" data-demo="tour" data-name="VietTour Assistant">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg>
+        Booking Tour
+      </button>
+      <button class="demo-tab" data-demo="hotel" data-name="LuxStay Concierge">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20"/><rect x="8" y="6" width="3" height="3"/><rect x="13" y="6" width="3" height="3"/><path d="M9 22V12h6v10"/></svg>
+        Khách sạn
+      </button>
+      <button class="demo-tab" data-demo="restaurant" data-name="Bella Pasta Bot">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+        Nhà hàng
+      </button>
+      <button class="demo-tab" data-demo="english" data-name="VietEnglish Advisor">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+        Trung tâm Anh ngữ
+      </button>
+    </div>
+
+    <!-- Main layout -->
+    <div class="demo-main">
+      <!-- Left: sticky phone -->
+      <div class="demo-phone-wrap reveal">
         <div class="chat-phone">
           <div class="chat-frame">
             <div class="chat-top">
@@ -601,64 +647,290 @@ footer{padding:64px 0 40px;border-top:1px solid var(--gb)}
                 </svg>
               </div>
               <div class="chat-meta">
-                <div class="chat-name">TechZone Assistant</div>
+                <div class="chat-name" id="demo-name">TechZone Assistant</div>
                 <div class="chat-status"><div class="ldot" style="width:6px;height:6px"></div>Đang hoạt động</div>
               </div>
               <div style="display:flex;gap:6px;margin-left:auto">
                 <div class="wdot r"></div><div class="wdot y"></div><div class="wdot g"></div>
               </div>
             </div>
-            <div class="chat-body">
-              <div class="msg bot">
-                <div class="msg-bubble">Xin chào! Mình là trợ lý AI của TechZone. Anh/chị đang tìm sản phẩm gì ạ?</div>
-                <div class="msg-time">09:41</div>
-              </div>
-              <div class="msg user">
-                <div class="msg-bubble">iPhone 15 Pro màu titan còn hàng không?</div>
-                <div class="msg-time">09:41</div>
-              </div>
-              <div class="msg bot">
-                <div class="msg-bubble">Dạ có ạ! iPhone 15 Pro Titan Đen 256GB đang sẵn kho:</div>
-              </div>
-              <div class="msg bot">
-                <div class="msg-product">
-                  <div class="mp-img">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="1.6"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18" stroke-linecap="round" stroke-width="2.5"/></svg>
-                  </div>
-                  <div>
-                    <div class="mp-name">iPhone 15 Pro · Titan Đen · 256GB</div>
-                    <div class="mp-price">₫28.490.000</div>
-                    <div class="mp-sub">Còn 14 máy · Giao 2–4 giờ</div>
-                  </div>
+
+            <!-- Screens container -->
+            <div class="demo-screens">
+
+              <!-- TECH -->
+              <div class="demo-screen active" data-demo="tech">
+                <div class="msg bot">
+                  <div class="msg-bubble">Xin chào! Mình là trợ lý AI của TechZone. Anh/chị đang tìm sản phẩm gì ạ?</div>
+                  <div class="msg-time">09:41</div>
                 </div>
-                <div class="msg-time">09:41</div>
+                <div class="msg user">
+                  <div class="msg-bubble">iPhone 15 Pro màu titan còn hàng không?</div>
+                  <div class="msg-time">09:41</div>
+                </div>
+                <div class="msg bot">
+                  <div class="msg-bubble">Dạ có ạ! iPhone 15 Pro Titan Đen 256GB đang sẵn kho:</div>
+                </div>
+                <div class="msg bot">
+                  <div class="msg-card">
+                    <div class="mc-row">
+                      <div class="mc-name">iPhone 15 Pro · Titan Đen · 256GB</div>
+                      <div class="mc-price">₫28.490.000</div>
+                    </div>
+                    <div class="mc-sub">Còn 14 máy · Giao nội thành 2–4 giờ</div>
+                    <div class="mc-tag"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Sẵn kho</div>
+                  </div>
+                  <div class="msg-time">09:41</div>
+                </div>
+                <div class="msg user">
+                  <div class="msg-bubble">Trả góp 0% được không?</div>
+                  <div class="msg-time">09:42</div>
+                </div>
+                <div class="msg bot">
+                  <div class="msg-bubble">Dạ được ạ — trả góp 0% qua thẻ tín dụng 12 tháng. Miễn phí vận chuyển và xuất hóa đơn VAT. Anh/chị muốn đặt ngay không?</div>
+                  <div class="msg-time">09:42</div>
+                </div>
               </div>
-              <div class="msg user">
-                <div class="msg-bubble">Trả góp 0% được không?</div>
-                <div class="msg-time">09:42</div>
+
+              <!-- TOUR -->
+              <div class="demo-screen" data-demo="tour">
+                <div class="msg bot">
+                  <div class="msg-bubble">Chào bạn! Mình là trợ lý VietTour. Bạn muốn đi tour đâu, mấy người ạ?</div>
+                  <div class="msg-time">10:05</div>
+                </div>
+                <div class="msg user">
+                  <div class="msg-bubble">Mình muốn đi Đà Nẵng tháng 7, 2 người lớn</div>
+                  <div class="msg-time">10:05</div>
+                </div>
+                <div class="msg bot">
+                  <div class="msg-bubble">Tuyệt! Tháng 7 biển Đà Nẵng đẹp lắm. Có 2 tour hot đang còn chỗ:</div>
+                </div>
+                <div class="msg bot">
+                  <div class="msg-card">
+                    <div class="mc-row">
+                      <div class="mc-name">Đà Nẵng 4N3Đ · Hội An + Bà Nà Hills</div>
+                      <div class="mc-price">₫4.800.000</div>
+                    </div>
+                    <div class="mc-sub">Khởi hành 19/07 · /người · Còn 6 chỗ</div>
+                    <div class="mc-tag"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg> Phổ biến nhất</div>
+                  </div>
+                  <div class="msg-time">10:05</div>
+                </div>
+                <div class="msg bot">
+                  <div class="msg-card">
+                    <div class="mc-row">
+                      <div class="mc-name">Đà Nẵng 3N2Đ · Tour Biển Mỹ Khê</div>
+                      <div class="mc-price">₫3.600.000</div>
+                    </div>
+                    <div class="mc-sub">Khởi hành 22/07 · /người · Còn 10 chỗ</div>
+                    <div class="mc-tag"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Còn chỗ</div>
+                  </div>
+                  <div class="msg-time">10:06</div>
+                </div>
+                <div class="msg user">
+                  <div class="msg-bubble">Tour 4N3Đ đặt được không? Cần visa không?</div>
+                  <div class="msg-time">10:06</div>
+                </div>
+                <div class="msg bot">
+                  <div class="msg-bubble">Đà Nẵng là trong nước nên không cần visa bạn nhé! Tour 19/07 còn 6 chỗ. Mình đặt giữ chỗ cho 2 người — tổng ₫9.600.000. Bạn cho mình SĐT để xác nhận nhé?</div>
+                  <div class="msg-time">10:07</div>
+                </div>
               </div>
-              <div class="msg bot">
-                <div class="msg-bubble">Dạ được ạ — trả góp 0% qua thẻ tín dụng 12 tháng. Miễn phí vận chuyển và xuất hóa đơn VAT. Anh/chị muốn đặt ngay không?</div>
-                <div class="msg-time">09:42</div>
+
+              <!-- HOTEL -->
+              <div class="demo-screen" data-demo="hotel">
+                <div class="msg bot">
+                  <div class="msg-bubble">Chào quý khách! LuxStay sẵn sàng hỗ trợ. Quý khách muốn đặt phòng ngày nào, bao nhiêu người ạ?</div>
+                  <div class="msg-time">14:20</div>
+                </div>
+                <div class="msg user">
+                  <div class="msg-bubble">Check-in 20/07, check-out 23/07, 2 người, cần view biển</div>
+                  <div class="msg-time">14:20</div>
+                </div>
+                <div class="msg bot">
+                  <div class="msg-bubble">Dạ, 3 đêm từ 20–23/07. Còn 2 loại phòng view biển đang trống:</div>
+                </div>
+                <div class="msg bot">
+                  <div class="msg-card">
+                    <div class="mc-row">
+                      <div class="mc-name">Deluxe Ocean View · Tầng 12–18</div>
+                      <div class="mc-price">₫1.290.000</div>
+                    </div>
+                    <div class="mc-sub">/ đêm · Buffet sáng cho 2 · Còn 3 phòng</div>
+                    <div class="mc-tag"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Còn phòng</div>
+                  </div>
+                  <div class="msg-time">14:21</div>
+                </div>
+                <div class="msg bot">
+                  <div class="msg-card">
+                    <div class="mc-row">
+                      <div class="mc-name">Superior City View · Tầng 6–11</div>
+                      <div class="mc-price">₫890.000</div>
+                    </div>
+                    <div class="mc-sub">/ đêm · Buffet sáng · View thành phố + biển xa</div>
+                    <div class="mc-tag"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Còn phòng</div>
+                  </div>
+                  <div class="msg-time">14:21</div>
+                </div>
+                <div class="msg user">
+                  <div class="msg-bubble">Đặt Deluxe Ocean View. Late checkout được không?</div>
+                  <div class="msg-time">14:22</div>
+                </div>
+                <div class="msg bot">
+                  <div class="msg-bubble">Late checkout đến 14:00 hỗ trợ miễn phí ạ! Tổng 3 đêm Deluxe: ₫3.870.000 đã bao gồm buffet sáng. Quý khách xác nhận đặt nhé?</div>
+                  <div class="msg-time">14:22</div>
+                </div>
               </div>
-            </div>
+
+              <!-- RESTAURANT -->
+              <div class="demo-screen" data-demo="restaurant">
+                <div class="msg bot">
+                  <div class="msg-bubble">Ciao! Bella Pasta đây. Bạn muốn đặt bàn hay order mang về ạ?</div>
+                  <div class="msg-time">11:30</div>
+                </div>
+                <div class="msg user">
+                  <div class="msg-bubble">Mang về, trưa nay lúc 12h30</div>
+                  <div class="msg-time">11:30</div>
+                </div>
+                <div class="msg bot">
+                  <div class="msg-bubble">OK! Pick-up lúc 12:30 nhé. Menu pasta hôm nay:</div>
+                </div>
+                <div class="msg bot">
+                  <div class="msg-card">
+                    <div class="mc-row">
+                      <div class="mc-name">Spaghetti Carbonara</div>
+                      <div class="mc-price">₫125.000</div>
+                    </div>
+                    <div class="mc-sub">Pancetta, trứng, Pecorino Romano · Best seller</div>
+                    <div class="mc-tag">🔥 Best seller</div>
+                  </div>
+                  <div class="msg-time">11:31</div>
+                </div>
+                <div class="msg bot">
+                  <div class="msg-card">
+                    <div class="mc-row">
+                      <div class="mc-name">Penne Arrabiata</div>
+                      <div class="mc-price">₫115.000</div>
+                    </div>
+                    <div class="mc-sub">Cà chua San Marzano, ớt, tỏi · Cay nhẹ</div>
+                    <div class="mc-tag"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Có sẵn</div>
+                  </div>
+                  <div class="msg-time">11:31</div>
+                </div>
+                <div class="msg user">
+                  <div class="msg-bubble">1 Carbonara + 1 Arrabiata, ít cay thôi</div>
+                  <div class="msg-time">11:32</div>
+                </div>
+                <div class="msg bot">
+                  <div class="msg-bubble">Đã ghi nhận! 1× Carbonara + 1× Arrabiata (ít cay). Tổng ₫240.000 — pick-up 12:30. Bếp bắt đầu làm lúc 12:00. Cho mình tên và SĐT để thông báo khi xong nhé?</div>
+                  <div class="msg-time">11:32</div>
+                </div>
+              </div>
+
+              <!-- ENGLISH -->
+              <div class="demo-screen" data-demo="english">
+                <div class="msg bot">
+                  <div class="msg-bubble">Chào bạn! VietEnglish tư vấn khóa học tiếng Anh. Bạn đang ở trình độ nào và mục tiêu là gì ạ?</div>
+                  <div class="msg-time">15:10</div>
+                </div>
+                <div class="msg user">
+                  <div class="msg-bubble">Mình muốn thi IELTS 6.0, đang ở B1</div>
+                  <div class="msg-time">15:10</div>
+                </div>
+                <div class="msg bot">
+                  <div class="msg-bubble">B1 lên 6.0 thường mất 4–6 tháng nếu học đúng phương pháp. Có khóa phù hợp nhất đây:</div>
+                </div>
+                <div class="msg bot">
+                  <div class="msg-card">
+                    <div class="mc-row">
+                      <div class="mc-name">IELTS Intensive 6.0+ · 4 tháng</div>
+                      <div class="mc-price">₫3.800.000</div>
+                    </div>
+                    <div class="mc-sub">T2–T4–T6 · 19:00–21:00 · Khai giảng 01/08</div>
+                    <div class="mc-tag"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> 87% học viên đạt target</div>
+                  </div>
+                  <div class="msg-time">15:11</div>
+                </div>
+                <div class="msg user">
+                  <div class="msg-bubble">Học online hay offline? Giáo viên nước ngoài không?</div>
+                  <div class="msg-time">15:11</div>
+                </div>
+                <div class="msg bot">
+                  <div class="msg-bubble">Khóa này học tại trung tâm (Q.1 TP.HCM) + video bài giảng xem lại online. Giáo viên bản ngữ dạy Speaking & Writing, giáo viên Việt Nam dạy Grammar & Reading. Bạn muốn đăng ký giữ chỗ không — chỉ cần đặt cọc ₫500.000?</div>
+                  <div class="msg-time">15:12</div>
+                </div>
+              </div>
+
+            </div><!-- /demo-screens -->
+
             <div class="chat-input-row">
               <div class="ci-field">Nhắn tin...</div>
               <div class="ci-send"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></div>
             </div>
           </div>
         </div>
-      </div>
-      <div class="dash-copy reveal" style="transition-delay:.15s">
-        <h2>Hội thoại tự nhiên,<br>chốt đơn ngay trong chat</h2>
-        <p>Bot hiểu tiếng Việt tự nhiên, tra kho realtime và dẫn dắt khách từ hỏi hàng đến xác nhận đơn — không cần chuyển sang trang khác.</p>
-        <div class="dash-features">
-          <div class="df-item"><div class="df-dot"></div><div><strong>Hiểu viết tắt & tiếng lóng</strong><p>Xử lý ngôn ngữ thực tế trong chat thương mại Việt Nam — không cần viết chuẩn chính tả</p></div></div>
-          <div class="df-item"><div class="df-dot"></div><div><strong>Tra kho, giá theo thời gian thực</strong><p>Kết nối trực tiếp hệ thống kho — tồn kho, giá niêm yết và khuyến mãi luôn chính xác</p></div></div>
-          <div class="df-item"><div class="df-dot"></div><div><strong>Xác nhận đơn ngay trong kênh</strong><p>Khách nhập địa chỉ và chọn thanh toán ngay trên Zalo hay Messenger — chuyển đổi tăng đáng kể</p></div></div>
+      </div><!-- /demo-phone-wrap -->
+
+      <!-- Right: feature text per industry -->
+      <div class="demo-right reveal" style="transition-delay:.15s">
+
+        <!-- TECH -->
+        <div class="demo-feat active" data-demo="tech">
+          <h3>Tư vấn & chốt đơn<br>ngay trong chat</h3>
+          <p>Bot hiểu tiếng Việt tự nhiên, tra kho realtime và dẫn dắt khách từ hỏi hàng đến xác nhận đơn — không cần chuyển sang trang khác.</p>
+          <div class="dash-features">
+            <div class="df-item"><div class="df-dot"></div><div><strong>Hiểu viết tắt & tiếng lóng</strong><p>Xử lý ngôn ngữ thực tế trong chat thương mại — không cần viết chuẩn chính tả</p></div></div>
+            <div class="df-item"><div class="df-dot"></div><div><strong>Tra kho, giá theo thời gian thực</strong><p>Kết nối trực tiếp hệ thống kho — tồn kho và khuyến mãi luôn chính xác</p></div></div>
+            <div class="df-item"><div class="df-dot"></div><div><strong>Trả góp, VAT tự động</strong><p>Trả lời chính xác điều kiện trả góp từng ngân hàng, xuất hóa đơn tức thì</p></div></div>
+          </div>
         </div>
-      </div>
-    </div>
+
+        <!-- TOUR -->
+        <div class="demo-feat" data-demo="tour">
+          <h3>Tư vấn tour & đặt chỗ<br>không cần hotline</h3>
+          <p>AI hiểu nhu cầu ngày đi, số người, ngân sách — gợi ý tour phù hợp và giữ chỗ ngay trong cuộc trò chuyện.</p>
+          <div class="dash-features">
+            <div class="df-item"><div class="df-dot"></div><div><strong>Tra cứu lịch khởi hành realtime</strong><p>Hiển thị số chỗ còn lại theo ngày, tự động khóa slot khi đặt cọc</p></div></div>
+            <div class="df-item"><div class="df-dot"></div><div><strong>Tư vấn visa & thủ tục</strong><p>Trả lời câu hỏi visa, giấy tờ từng điểm đến — giảm 70% câu hỏi lặp</p></div></div>
+            <div class="df-item"><div class="df-dot"></div><div><strong>Upsell dịch vụ bổ sung</strong><p>Gợi ý bảo hiểm du lịch, khách sạn, vé tham quan — tăng giá trị đơn</p></div></div>
+          </div>
+        </div>
+
+        <!-- HOTEL -->
+        <div class="demo-feat" data-demo="hotel">
+          <h3>Đặt phòng tức thì,<br>concierge 24/7</h3>
+          <p>Khách check được phòng trống, giá, tiện nghi và đặt ngay — không cần gọi điện hay chờ nhân viên phản hồi.</p>
+          <div class="dash-features">
+            <div class="df-item"><div class="df-dot"></div><div><strong>Tích hợp PMS trực tiếp</strong><p>Kết nối hệ thống quản lý khách sạn — phòng trống và giá luôn chính xác</p></div></div>
+            <div class="df-item"><div class="df-dot"></div><div><strong>Yêu cầu đặc biệt & upsell</strong><p>Ghi nhận early/late check-out, giường phụ, view, minibar — tăng ADR</p></div></div>
+            <div class="df-item"><div class="df-dot"></div><div><strong>Hỗ trợ đa ngôn ngữ</strong><p>Phục vụ khách quốc tế bằng tiếng Anh, Trung, Hàn tự động</p></div></div>
+          </div>
+        </div>
+
+        <!-- RESTAURANT -->
+        <div class="demo-feat" data-demo="restaurant">
+          <h3>Order thông minh,<br>giảm tải nhân viên</h3>
+          <p>Khách gọi món qua chat, bot ghi nhận yêu cầu đặc biệt và xác nhận giờ nhận — bếp nhận order tức thì không cần qua lễ tân.</p>
+          <div class="dash-features">
+            <div class="df-item"><div class="df-dot"></div><div><strong>Menu theo thời gian thực</strong><p>Hiển thị món còn phục vụ, hết nguyên liệu tự động ẩn khỏi menu</p></div></div>
+            <div class="df-item"><div class="df-dot"></div><div><strong>Ghi nhận dị ứng & khẩu vị</strong><p>Ghi chú ít cay, không hành, dị ứng thực phẩm — chuyển thẳng vào POS</p></div></div>
+            <div class="df-item"><div class="df-dot"></div><div><strong>Đặt bàn & nhắc lịch</strong><p>Đặt bàn qua Zalo/Messenger, tự nhắc trước 1 giờ — giảm no-show đáng kể</p></div></div>
+          </div>
+        </div>
+
+        <!-- ENGLISH -->
+        <div class="demo-feat" data-demo="english">
+          <h3>Tư vấn khóa học,<br>chốt đăng ký không cần telesale</h3>
+          <p>AI phân tích trình độ và mục tiêu, gợi ý khóa học phù hợp và hướng dẫn đặt cọc giữ chỗ — tỉ lệ chuyển đổi tăng 3×.</p>
+          <div class="dash-features">
+            <div class="df-item"><div class="df-dot"></div><div><strong>Phân loại trình độ tự động</strong><p>Hỏi một vài câu để xác định trình độ hiện tại và gợi ý lộ trình phù hợp</p></div></div>
+            <div class="df-item"><div class="df-dot"></div><div><strong>Thông báo lịch khai giảng</strong><p>Nhắc tự động khi gần ngày khai giảng — giảm tỉ lệ bỏ lỡ đăng ký</p></div></div>
+            <div class="df-item"><div class="df-dot"></div><div><strong>Follow-up sau tư vấn</strong><p>Tự động hỏi thăm học viên tiềm năng sau 24h — chuyển đổi thêm 18%</p></div></div>
+          </div>
+        </div>
+
+      </div><!-- /demo-right -->
+    </div><!-- /demo-main -->
   </div>
 </section>
 
@@ -903,6 +1175,21 @@ function toggleMenu(force) {
 menuBtn.addEventListener('click', () => toggleMenu());
 mobileMenu.querySelectorAll('a').forEach(a => a.addEventListener('click', () => toggleMenu(false)));
 document.addEventListener('keydown', e => { if (e.key === 'Escape') toggleMenu(false); });
+
+/* ── DEMO TABS ──────────────────────────────────────────────────────────── */
+document.querySelectorAll('.demo-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    const key = tab.dataset.demo;
+    document.querySelectorAll('.demo-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.demo-screen').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.demo-feat').forEach(f => f.classList.remove('active'));
+    tab.classList.add('active');
+    document.querySelector(`.demo-screen[data-demo="${key}"]`).classList.add('active');
+    document.querySelector(`.demo-feat[data-demo="${key}"]`).classList.add('active');
+    const nameEl = document.getElementById('demo-name');
+    if (nameEl) nameEl.textContent = tab.dataset.name || '';
+  });
+});
 
 /* ── THEME ──────────────────────────────────────────────────────────────── */
 const html = document.documentElement;
