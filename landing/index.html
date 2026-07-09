@@ -216,7 +216,9 @@ p{color:var(--text-2);line-height:1.75}
 @media(max-width:600px){.stats-wrap{grid-template-columns:1fr}.stat-cell{padding:28px}}
 
 /* ── FEATURES ────────────────────────────────────────────────────────────── */
-.feat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+.feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.feat-card:nth-child(1){grid-column:1/3}
+.feat-card:nth-child(4){grid-column:2/4}
 .feat-card{background:var(--g1);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);border:1px solid var(--gb);border-radius:var(--r-lg);padding:34px;transition:border-color .25s,background .25s,transform .25s,box-shadow .25s}
 .feat-card:hover{background:var(--g2);border-color:var(--gb-hi);transform:translateY(-3px);box-shadow:0 20px 60px rgba(0,0,0,.2)}
 .feat-ico{width:50px;height:50px;border-radius:13px;display:flex;align-items:center;justify-content:center;margin-bottom:20px}
@@ -226,7 +228,7 @@ p{color:var(--text-2);line-height:1.75}
 .ico-blue{background:var(--bdim);color:var(--blue);border:1px solid rgba(96,165,250,.2)}
 .feat-card h3{margin-bottom:10px}
 .feat-card p{font-size:14px}
-@media(max-width:700px){.feat-grid{grid-template-columns:1fr}}
+@media(max-width:700px){.feat-grid{grid-template-columns:1fr}.feat-card:nth-child(1),.feat-card:nth-child(4){grid-column:auto}}
 
 /* ── INDUSTRIES ──────────────────────────────────────────────────────────── */
 .ind-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
@@ -444,7 +446,7 @@ footer{padding:64px 0 40px;border-top:1px solid var(--gb)}
             <div class="chat-channels">
               <div class="ch-dot" style="background:#0068FF;border-radius:6px;color:#fff;font-weight:700;font-size:12px">Z</div>
               <div class="ch-dot" style="background:#0866FF;border-radius:6px;color:#fff;font-size:9px">f</div>
-              <div class="ch-dot" style="background:var(--g2);border:1px solid var(--gb);font-size:9px">🌐</div>
+              <div class="ch-dot" style="background:var(--g2);border:1px solid var(--gb)"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></div>
             </div>
           </div>
           <div class="chat-body" id="chat-body">
@@ -526,21 +528,20 @@ footer{padding:64px 0 40px;border-top:1px solid var(--gb)}
 <section class="section" id="linh-vuc">
   <div class="wrap">
     <div class="sec-head reveal">
-      <span class="label">Lĩnh vực áp dụng</span>
       <h2>Giải pháp cho mọi<br>ngành nghề</h2>
       <p>Được cấu hình sẵn cho các usecase đặc thù của từng ngành, triển khai nhanh chỉ trong vài giờ.</p>
     </div>
     <div class="ind-grid reveal">
-      <div class="ind-card"><div class="ind-ico">🛒</div><h4>Thương mại điện tử</h4><ul class="ind-uses"><li>Tư vấn & gợi ý sản phẩm</li><li>Tra cứu đơn hàng, vận chuyển</li><li>Xử lý đổi trả, hoàn tiền</li></ul></div>
-      <div class="ind-card"><div class="ind-ico">🏦</div><h4>Ngân hàng & Tài chính</h4><ul class="ind-uses"><li>Kiểm tra số dư, giao dịch</li><li>Tư vấn sản phẩm tài chính</li><li>Hỗ trợ 24/7 không chờ đợi</li></ul></div>
-      <div class="ind-card"><div class="ind-ico">🏥</div><h4>Y tế & Bệnh viện</h4><ul class="ind-uses"><li>Đặt lịch khám tự động</li><li>Nhắc uống thuốc, tái khám</li><li>Sàng lọc triệu chứng ban đầu</li></ul></div>
-      <div class="ind-card"><div class="ind-ico">📚</div><h4>Giáo dục</h4><ul class="ind-uses"><li>Trợ giảng AI cá nhân hóa</li><li>Giải đáp bài tập, câu hỏi</li><li>Quản lý tuyển sinh tự động</li></ul></div>
-      <div class="ind-card"><div class="ind-ico">🏨</div><h4>Du lịch & Khách sạn</h4><ul class="ind-uses"><li>Đặt phòng, check-in</li><li>Gợi ý lịch trình du lịch</li><li>Hỗ trợ đa ngôn ngữ</li></ul></div>
-      <div class="ind-card"><div class="ind-ico">⚖️</div><h4>Pháp lý & Tư vấn</h4><ul class="ind-uses"><li>Tư vấn pháp luật cơ bản</li><li>Đặt lịch tư vấn luật sư</li><li>Tra cứu quy định, điều luật</li></ul></div>
-      <div class="ind-card"><div class="ind-ico">🏭</div><h4>Doanh nghiệp nội bộ</h4><ul class="ind-uses"><li>IT Helpdesk tự động</li><li>Hỏi đáp chính sách nhân sự</li><li>Tra cứu tài liệu (RAG)</li></ul></div>
-      <div class="ind-card"><div class="ind-ico">🚚</div><h4>Logistics & Vận tải</h4><ul class="ind-uses"><li>Theo dõi đơn hàng, lộ trình</li><li>Thông báo giao hàng tự động</li><li>Xử lý khiếu nại vận chuyển</li></ul></div>
-      <div class="ind-card"><div class="ind-ico">🏛️</div><h4>Chính phủ & Dịch vụ công</h4><ul class="ind-uses"><li>Hướng dẫn thủ tục hành chính</li><li>Tra cứu hồ sơ, tiến độ</li><li>Giải đáp chính sách, quy định</li></ul></div>
-      <div class="ind-card"><div class="ind-ico">📞</div><h4>Chăm sóc khách hàng</h4><ul class="ind-uses"><li>Trả lời FAQ tự động 24/7</li><li>Tiếp nhận & phân loại khiếu nại</li><li>Upsell, cross-sell thông minh</li></ul></div>
+      <div class="ind-card"><div class="ind-ico" style="color:var(--teal)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg></div><h4>Thương mại điện tử</h4><ul class="ind-uses"><li>Tư vấn & gợi ý sản phẩm</li><li>Tra cứu đơn hàng, vận chuyển</li><li>Xử lý đổi trả, hoàn tiền</li></ul></div>
+      <div class="ind-card"><div class="ind-ico" style="color:var(--violet)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="3" y1="22" x2="21" y2="22"/><rect x="2" y="11" width="20" height="11"/><polygon points="12 2 2 7 22 7"/></svg></div><h4>Ngân hàng & Tài chính</h4><ul class="ind-uses"><li>Kiểm tra số dư, giao dịch</li><li>Tư vấn sản phẩm tài chính</li><li>Hỗ trợ 24/7 không chờ đợi</li></ul></div>
+      <div class="ind-card"><div class="ind-ico" style="color:var(--red)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M12 8v8M8 12h8"/></svg></div><h4>Y tế & Bệnh viện</h4><ul class="ind-uses"><li>Đặt lịch khám tự động</li><li>Nhắc uống thuốc, tái khám</li><li>Sàng lọc triệu chứng ban đầu</li></ul></div>
+      <div class="ind-card"><div class="ind-ico" style="color:var(--amber)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></div><h4>Giáo dục</h4><ul class="ind-uses"><li>Trợ giảng AI cá nhân hóa</li><li>Giải đáp bài tập, câu hỏi</li><li>Quản lý tuyển sinh tự động</li></ul></div>
+      <div class="ind-card"><div class="ind-ico" style="color:var(--blue)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="2" width="16" height="20"/><path d="M9 22V12h6v10"/><rect x="8" y="6" width="3" height="3"/><rect x="13" y="6" width="3" height="3"/></svg></div><h4>Du lịch & Khách sạn</h4><ul class="ind-uses"><li>Đặt phòng, check-in</li><li>Gợi ý lịch trình du lịch</li><li>Hỗ trợ đa ngôn ngữ</li></ul></div>
+      <div class="ind-card"><div class="ind-ico" style="color:var(--teal)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="12" y1="4" x2="12" y2="20"/><path d="M5 8l7-4 7 4"/><path d="M3 16h6"/><path d="M15 16h6"/></svg></div><h4>Pháp lý & Tư vấn</h4><ul class="ind-uses"><li>Tư vấn pháp luật cơ bản</li><li>Đặt lịch tư vấn luật sư</li><li>Tra cứu quy định, điều luật</li></ul></div>
+      <div class="ind-card"><div class="ind-ico" style="color:var(--violet)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg></div><h4>Doanh nghiệp nội bộ</h4><ul class="ind-uses"><li>IT Helpdesk tự động</li><li>Hỏi đáp chính sách nhân sự</li><li>Tra cứu tài liệu (RAG)</li></ul></div>
+      <div class="ind-card"><div class="ind-ico" style="color:var(--amber)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg></div><h4>Logistics & Vận tải</h4><ul class="ind-uses"><li>Theo dõi đơn hàng, lộ trình</li><li>Thông báo giao hàng tự động</li><li>Xử lý khiếu nại vận chuyển</li></ul></div>
+      <div class="ind-card"><div class="ind-ico" style="color:var(--blue)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="3" y1="22" x2="21" y2="22"/><rect x="2" y="11" width="20" height="11"/><polygon points="12 2 2 7 22 7"/><line x1="7" y1="11" x2="7" y2="22"/><line x1="12" y1="11" x2="12" y2="22"/><line x1="17" y1="11" x2="17" y2="22"/></svg></div><h4>Chính phủ & Dịch vụ công</h4><ul class="ind-uses"><li>Hướng dẫn thủ tục hành chính</li><li>Tra cứu hồ sơ, tiến độ</li><li>Giải đáp chính sách, quy định</li></ul></div>
+      <div class="ind-card"><div class="ind-ico" style="color:var(--teal)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg></div><h4>Chăm sóc khách hàng</h4><ul class="ind-uses"><li>Trả lời FAQ tự động 24/7</li><li>Tiếp nhận & phân loại khiếu nại</li><li>Upsell, cross-sell thông minh</li></ul></div>
     </div>
   </div>
 </section>
@@ -550,7 +551,6 @@ footer{padding:64px 0 40px;border-top:1px solid var(--gb)}
   <div class="wrap">
     <div class="dash-split">
       <div class="dash-copy reveal">
-        <span class="label">Admin Dashboard</span>
         <h2>Kiểm soát toàn bộ<br>trong một màn hình</h2>
         <p>Dashboard realtime theo dõi mọi hoạt động của chatbot — từ phiên hội thoại đang diễn ra đến phân tích chi phí token, tỉ lệ chuyển đổi và độ hài lòng khách hàng.</p>
         <div class="dash-features">
@@ -591,9 +591,9 @@ footer{padding:64px 0 40px;border-top:1px solid var(--gb)}
             </div>
             <div class="session-panel">
               <div class="sp-head"><span>Phiên đang hoạt động</span><span style="color:var(--teal);font-family:var(--mono)">14 online</span></div>
-              <div class="sp-row"><div class="sdot alive"></div><span class="sname">Nguyễn Văn A</span><span style="color:var(--text-3);font-size:10px">💻 MacBook M3</span><span class="stime">0:42</span></div>
+              <div class="sp-row"><div class="sdot alive"></div><span class="sname">Nguyễn Văn A</span><span style="color:var(--text-3);font-size:10px;font-family:var(--mono)">MacBook M3</span><span class="stime">0:42</span></div>
               <div class="sp-row"><div class="sdot esc"></div><span class="sname">Trần Thị B</span><span class="badge badge-red" style="padding:2px 7px;font-size:9.5px">ESCALATED</span><span class="stime">2:15</span></div>
-              <div class="sp-row"><div class="sdot alive"></div><span class="sname">Lê Minh C</span><span style="color:var(--text-3);font-size:10px">📱 iPhone 15</span><span class="stime">1:08</span></div>
+              <div class="sp-row"><div class="sdot alive"></div><span class="sname">Lê Minh C</span><span style="color:var(--text-3);font-size:10px;font-family:var(--mono)">iPhone 15</span><span class="stime">1:08</span></div>
               <div class="sp-row"><div class="sdot alive"></div><span class="sname">Phạm Văn D</span><span class="badge badge-blue" style="padding:2px 7px;font-size:9.5px">Order</span><span class="stime">3:50</span></div>
             </div>
           </div>
@@ -633,7 +633,6 @@ footer{padding:64px 0 40px;border-top:1px solid var(--gb)}
         </div>
       </div>
       <div class="omni-feats reveal" style="transition-delay:.15s">
-        <span class="label">Quản lý đa kênh</span>
         <h2>Một giao diện,<br>tất cả kênh liên lạc</h2>
         <div class="ofeat">
           <div class="ofeat-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
@@ -815,12 +814,12 @@ const chatBody = document.getElementById('chat-body');
 const typingEl = document.getElementById('typing');
 const MSGS = [
   { role:'user', text:'Cho tôi tư vấn laptop gaming khoảng 25–30 triệu', delay:800 },
-  { role:'bot',  text:'💻 Tôi có 3 lựa chọn phù hợp ngân sách của bạn:', delay:2200, typeDur:1200 },
+  { role:'bot',  text:'Tôi có 3 lựa chọn phù hợp ngân sách của bạn:', delay:2200, typeDur:1200 },
   { role:'card', delay:2400 },
   { role:'user', text:'ASUS ROG có bảo hành không?', delay:5500 },
-  { role:'bot',  text:'ASUS ROG Strix G16 được bảo hành <strong>24 tháng chính hãng</strong> tại 120+ trung tâm toàn quốc. Bạn muốn đặt hàng không? 🛒', delay:7200, typeDur:1400 },
+  { role:'bot',  text:'ASUS ROG Strix G16 được bảo hành <strong>24 tháng chính hãng</strong> tại 120+ trung tâm toàn quốc. Bạn muốn đặt hàng không?', delay:7200, typeDur:1400 },
   { role:'user', text:'Đặt luôn, giao về Hà Nội', delay:9500 },
-  { role:'bot',  text:'🎉 <strong>Đặt hàng thành công!</strong> Mã đơn #ORD2847. Dự kiến giao 2–3 ngày. Bạn sẽ nhận thông báo theo từng bước.', delay:11200, typeDur:1600 },
+  { role:'bot',  text:'<strong>Đặt hàng thành công.</strong> Mã đơn #ORD2847. Dự kiến giao 2–3 ngày. Bạn sẽ nhận thông báo theo từng bước.', delay:11200, typeDur:1600 },
 ];
 function addMsg(m) {
   const el = document.createElement('div');
