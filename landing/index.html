@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="vi" data-theme="dark">
+<html lang="vi" data-theme="dark" data-lang="vi">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -380,12 +380,11 @@ canvas{display:block}
 .price-card.hot .price-btn{background:linear-gradient(135deg,#CD6B6B,#B04444);color:#fff;border-color:rgba(205,107,107,.5);box-shadow:0 0 18px rgba(205,107,107,.3)}
 .price-card.hot .price-btn:hover{background:linear-gradient(135deg,#D88D8D,#CD6B6B);box-shadow:0 0 32px rgba(216,141,141,.45)}
 @media(max-width:700px){.price-grid{grid-template-columns:1fr!important;max-width:420px;margin-inline:auto}}
-.price-cur-toggle{display:flex;justify-content:center;gap:6px;margin-bottom:32px}
-.pct-btn{display:inline-flex;align-items:center;gap:7px;padding:8px 22px;border-radius:99px;border:1px solid var(--gb);background:var(--g1);color:var(--text-2);font-size:13px;font-weight:600;font-family:var(--font);cursor:pointer;transition:all .2s var(--ease);backdrop-filter:var(--blur-sm);-webkit-backdrop-filter:var(--blur-sm)}
-.pct-btn.active{background:var(--vdim);border-color:rgba(216,141,141,.35);color:var(--violet)}
-.pct-btn .flag{font-size:15px;line-height:1}
-#price-section[data-cur="vnd"] .p-usd{display:none}
-#price-section[data-cur="usd"] .p-vnd{display:none}
+/* ── I18N ───────────────────────────────────────────────────────────────── */
+html[data-lang="vi"] .lang-en{display:none!important}
+html[data-lang="en"] .lang-vi{display:none!important}
+.lang-btn{display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:99px;border:1px solid var(--gb);background:var(--g1);color:var(--text-2);font-size:12px;font-weight:700;font-family:var(--font);cursor:pointer;transition:all .2s var(--ease);letter-spacing:.04em;backdrop-filter:var(--blur-sm);-webkit-backdrop-filter:var(--blur-sm)}
+.lang-btn:hover{border-color:var(--gb-hi);color:var(--text);background:var(--g2)}
 
 /* ── CTA ─────────────────────────────────────────────────────────────────── */
 .cta-card{background:var(--g1);backdrop-filter:var(--blur-lg);-webkit-backdrop-filter:var(--blur-lg);border:1px solid rgba(216,141,141,.2);border-radius:var(--r-xl);padding:80px 60px;text-align:center;position:relative;overflow:hidden}
@@ -436,21 +435,25 @@ footer{padding:64px 0 40px;border-top:1px solid var(--gb)}
       <span class="logo-name">RynexaAI</span>
     </a>
     <ul class="nav-links">
-      <li><a href="#tinh-nang">Tính năng</a></li>
-      <li><a href="#linh-vuc">Lĩnh vực</a></li>
+      <li><a href="#tinh-nang"><span class="lang-vi">Tính năng</span><span class="lang-en">Features</span></a></li>
+      <li><a href="#linh-vuc"><span class="lang-vi">Lĩnh vực</span><span class="lang-en">Industries</span></a></li>
       <li><a href="#dashboard">Dashboard</a></li>
-      <li><a href="#omni">Đa kênh</a></li>
-      <li><a href="#bang-gia">Bảng giá</a></li>
+      <li><a href="#omni"><span class="lang-vi">Đa kênh</span><span class="lang-en">Omnichannel</span></a></li>
+      <li><a href="#bang-gia"><span class="lang-vi">Bảng giá</span><span class="lang-en">Pricing</span></a></li>
     </ul>
     <div class="nav-acts">
+      <button class="lang-btn" id="lang-btn" aria-label="Switch language">
+        <span class="lang-vi">EN</span>
+        <span class="lang-en">VI</span>
+      </button>
       <button class="theme-btn" id="theme-btn" title="Chuyển giao diện" aria-label="Toggle theme">
         <svg id="ico-sun" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
         <svg id="ico-moon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
       </button>
-      <a href="#bang-gia" class="btn btn-glass" style="padding:9px 18px;font-size:13.5px">Xem giá</a>
-      <a href="#lien-he" class="btn btn-primary" style="padding:9px 18px;font-size:13.5px">Dùng thử miễn phí</a>
+      <a href="#bang-gia" class="btn btn-glass" style="padding:9px 18px;font-size:13.5px"><span class="lang-vi">Xem giá</span><span class="lang-en">Pricing</span></a>
+      <a href="#lien-he" class="btn btn-primary" style="padding:9px 18px;font-size:13.5px"><span class="lang-vi">Dùng thử miễn phí</span><span class="lang-en">Free Trial</span></a>
     </div>
-    <button class="menu-btn" id="menu-btn" aria-label="Mở menu" aria-expanded="false">
+    <button class="menu-btn" id="menu-btn" aria-label="Open menu" aria-expanded="false">
       <span></span><span></span><span></span>
     </button>
   </div>
@@ -459,16 +462,16 @@ footer{padding:64px 0 40px;border-top:1px solid var(--gb)}
 <!-- ── MOBILE MENU ────────────────────────────────────────────────────────── -->
 <div class="mobile-menu" id="mobile-menu" aria-hidden="true">
   <ul class="mm-links">
-    <li><a href="#tinh-nang">Tính năng</a></li>
-    <li><a href="#demo">Demo thực tế</a></li>
-    <li><a href="#linh-vuc">Lĩnh vực</a></li>
+    <li><a href="#tinh-nang"><span class="lang-vi">Tính năng</span><span class="lang-en">Features</span></a></li>
+    <li><a href="#demo"><span class="lang-vi">Demo thực tế</span><span class="lang-en">Live Demo</span></a></li>
+    <li><a href="#linh-vuc"><span class="lang-vi">Lĩnh vực</span><span class="lang-en">Industries</span></a></li>
     <li><a href="#dashboard">Dashboard</a></li>
-    <li><a href="#omni">Đa kênh</a></li>
-    <li><a href="#bang-gia">Bảng giá</a></li>
+    <li><a href="#omni"><span class="lang-vi">Đa kênh</span><span class="lang-en">Omnichannel</span></a></li>
+    <li><a href="#bang-gia"><span class="lang-vi">Bảng giá</span><span class="lang-en">Pricing</span></a></li>
   </ul>
   <div class="mm-cta">
-    <a href="#lien-he" class="btn btn-primary" style="justify-content:center;font-size:14.5px">Dùng thử miễn phí 14 ngày</a>
-    <a href="#bang-gia" class="btn btn-glass" style="justify-content:center;font-size:14px">Xem bảng giá</a>
+    <a href="#lien-he" class="btn btn-primary" style="justify-content:center;font-size:14.5px"><span class="lang-vi">Dùng thử miễn phí 14 ngày</span><span class="lang-en">Start 14-day Free Trial</span></a>
+    <a href="#bang-gia" class="btn btn-glass" style="justify-content:center;font-size:14px"><span class="lang-vi">Xem bảng giá</span><span class="lang-en">View Pricing</span></a>
   </div>
 </div>
 
@@ -479,35 +482,38 @@ footer{padding:64px 0 40px;border-top:1px solid var(--gb)}
       <div class="hero-copy reveal">
         <div class="hero-eyebrow">
           <div class="ldot"></div>
-          <span class="badge badge-violet">AI-Powered · Đa kênh · Thời gian thực</span>
+          <span class="badge badge-violet"><span class="lang-vi">AI-Powered · Đa kênh · Thời gian thực</span><span class="lang-en">AI-Powered · Omnichannel · Real-time</span></span>
         </div>
         <h1 class="hero-title">
-          Chatbot AI<br>
+          <span class="lang-vi">Chatbot AI<br>
           <span class="grad">thông minh</span><br>
           cho doanh nghiệp<br>
-          hiện đại
+          hiện đại</span>
+          <span class="lang-en">Smart AI Chatbot<br>
+          <span class="grad">for modern</span><br>
+          businesses</span>
         </h1>
-        <p class="hero-sub">Triển khai trợ lý AI tư vấn, chăm sóc khách hàng và bán hàng trên Zalo, Facebook Messenger, Website — đội ngũ kỹ thuật RynexaAI triển khai hoàn chỉnh và bàn giao trong vòng 72 giờ.</p>
+        <p class="hero-sub"><span class="lang-vi">Triển khai trợ lý AI tư vấn, chăm sóc khách hàng và bán hàng trên Zalo, Facebook Messenger, Website — đội ngũ kỹ thuật RynexaAI triển khai hoàn chỉnh và bàn giao trong vòng 72 giờ.</span><span class="lang-en">Automate 85% of customer support. Bot understands natural language, integrates with Zalo, Messenger, Website — deploy in 72 hours.</span></p>
         <div class="hero-cta">
           <a href="#lien-he" class="btn btn-primary btn-lg">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-            Bắt đầu miễn phí
+            <span class="lang-vi">Bắt đầu miễn phí</span><span class="lang-en">Start 14-day Free Trial</span>
           </a>
-          <a href="#dashboard" class="btn btn-glass btn-lg">Xem demo</a>
+          <a href="#dashboard" class="btn btn-glass btn-lg"><span class="lang-vi">Xem demo</span><span class="lang-en">Watch Live Demo</span></a>
         </div>
         <p class="hero-note">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-          Dùng thử 14 ngày · Cam kết bảo mật dữ liệu · Hủy bất cứ lúc nào
+          <span class="lang-vi">Dùng thử 14 ngày · Cam kết bảo mật dữ liệu · Hủy bất cứ lúc nào</span><span class="lang-en">No credit card required · Deploy in 72 hours · 24/7 Support</span>
         </p>
       </div>
 
       <div class="hero-demo reveal" style="position:relative;transition-delay:.15s">
         <div class="float-chip fc-1">
           <div class="chip-val" style="color:var(--green)">247</div>
-          <div class="chip-lbl">Sessions đang hoạt động</div>
+          <div class="chip-lbl"><span class="lang-vi">Sessions đang hoạt động</span><span class="lang-en">Active sessions</span></div>
           <div class="chip-delta">
             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="18 15 12 9 6 15"/></svg>
-            +12% so với hôm qua
+            <span class="lang-vi">+12% so với hôm qua</span><span class="lang-en">+12% vs yesterday</span>
           </div>
         </div>
         <div class="float-chip fc-2">
